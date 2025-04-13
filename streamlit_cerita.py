@@ -5,9 +5,6 @@ import re
 import io
 import os
 from datetime import datetime
-from streamlit.runtime.scriptrunner import rerun
-
-
 
 # Set page config (HARUS menjadi perintah Streamlit pertama)
 st.set_page_config(
@@ -170,7 +167,7 @@ def info_page():
     with col_btn[1]:
         if st.button("Mulai", use_container_width=True):
             st.session_state.page = "data_diri"
-            rerun()
+            st.experimental_rerun()
 
 # Halaman data diri
 def data_diri_page():
@@ -590,6 +587,7 @@ def cerita_page():
         st.markdown(f'<div class="gdocs-text">{formatted_text}</div>', unsafe_allow_html=True)
 
 def main():
+    # Sembunyikan semua pesan otomatis
     
     # Inisialisasi session state jika belum ada
     if 'stories' not in st.session_state:
