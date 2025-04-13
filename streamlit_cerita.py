@@ -587,8 +587,6 @@ def cerita_page():
         st.markdown(f'<div class="gdocs-text">{formatted_text}</div>', unsafe_allow_html=True)
 
 def main():
-    # Sembunyikan semua pesan otomatis
-    st.set_option('deprecation.showfileUploaderEncoding', False)
     
     # Inisialisasi session state jika belum ada
     if 'stories' not in st.session_state:
