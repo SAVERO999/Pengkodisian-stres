@@ -1,0 +1,1 @@
+# Pengkodisian-stres
