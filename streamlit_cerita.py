@@ -333,12 +333,25 @@ def data_diri_page():
     st.title("📝 Data Diri")
     st.markdown("---")
     
+    # Reset riwayat jika nama berubah
+    if 'previous_nama' not in st.session_state:
+        st.session_state.previous_nama = ""
+    
     with st.container():
         col1, col2 = st.columns(2)
         
         with col1:
             st.markdown("### Informasi Pribadi")
             nama = st.text_input("Nama Lengkap", key="nama")
+            
+            # Cek jika nama berubah dan hapus riwayat
+            if nama != st.session_state.previous_nama and nama.strip() != "":
+                if 'results' in st.session_state:
+                    del st.session_state.results
+                if 'completed_conditions' in st.session_state:
+                    del st.session_state.completed_conditions
+                st.session_state.previous_nama = nama
+            
             umur = st.number_input("Umur", min_value=0, max_value=120, step=1, key="umur")
             gender = st.radio("Jenis Kelamin", ["Laki-laki", "Perempuan"], key="gender")
         
@@ -399,6 +412,13 @@ def data_diri_page():
                     "Durasi Tidur (jam)": durasi_tidur,
                     "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
+                
+                # Pastikan riwayat kosong saat memulai
+                if 'results' not in st.session_state:
+                    st.session_state.results = []
+                if 'completed_conditions' not in st.session_state:
+                    st.session_state.completed_conditions = []
+                    
                 st.session_state.page = "tahap1"
                 st.rerun()
             else:
@@ -409,9 +429,15 @@ def data_diri_page():
                     "Durasi Tidur (jam)": durasi_tidur,
                     "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
+                
+                # Pastikan riwayat kosong saat memulai
+                if 'results' not in st.session_state:
+                    st.session_state.results = []
+                if 'completed_conditions' not in st.session_state:
+                    st.session_state.completed_conditions = []
+                    
                 st.session_state.page = "tahap1"
                 st.rerun()
-
 def rest_timer_page():
     # First, clear any remaining arithmetic history when entering this page
     if 'answers' in st.session_state:
