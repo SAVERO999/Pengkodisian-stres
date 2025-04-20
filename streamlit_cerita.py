@@ -740,8 +740,8 @@ def feeling_evaluation_page():
         <div class='medium-font'>
         <b>Instruksi Persiapan (1 menit):</b><br>
         1. Pikirkan perubahan emosi yang Anda rasakan<br>
-        2. Presentasikan secara jelas dan terstruktur
-        3. Siapkan poin-poin utama yang ingin disampaikanbr>
+        2. Presentasikan secara jelas dan terstruktur<br>
+        3. Siapkan poin-poin utama yang ingin disampaikan <br>
         4. Anda akan presentasikan selama 3 menit
         </div>
         """, unsafe_allow_html=True)
@@ -927,7 +927,7 @@ def high_arithmetic_page():
     minutes, seconds = divmod(int(time_left), 60)
     st.markdown(f"### Waktu Tersisa: {minutes:02d}:{seconds:02d}")
     
-    progress = min(elapsed / 3, 1.0)
+    progress = min(elapsed / 300, 1.0)
     st.progress(progress)
     
     if time_left <= 0:
@@ -1020,7 +1020,7 @@ def cerita_setup_page():
     
     col_btn = st.columns([1, 2, 1])
     with col_btn[1]:
-        if st.button("🔀 Acak Cerita dan Mulai Membaca", key="start_reading"):
+        if st.button("🔀 Mulai Membaca", key="start_reading"):
             if st.session_state.stories:
                 st.session_state.selected_story = random.choice(st.session_state.stories)
                 st.session_state.page = "cerita"
@@ -1034,7 +1034,7 @@ def presentation_prep_page():
         st.session_state.prep_start_time = time.time()
     
     elapsed = time.time() - st.session_state.prep_start_time
-    time_left = max(0, 3 - elapsed)
+    time_left = max(0, 300 - elapsed)
 
     st.markdown("### Topik Presentasi Anda:")
     st.markdown(f"<div style='padding:10px; background-color:#cce5ff; border-radius:5px; font-size:24px; font-weight:bold;'>{st.session_state.selected_topic}</div>", unsafe_allow_html=True)
