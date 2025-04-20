@@ -9,7 +9,7 @@ from datetime import datetime
 import streamlit.components.v1 as components
 
 # ============================================
-# PAGE CONFIGURATION
+# KONFIGURASI HALAMAN
 # ============================================
 st.set_page_config(
     page_title="Aplikasi Pengkondisian Stres",
@@ -18,7 +18,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# CSS for consistent styling
+# CSS untuk styling konsisten
 st.markdown("""
 <style>
     .big-font {
@@ -50,11 +50,22 @@ st.markdown("""
     .stNumberInput input {
         font-size: 16px;
     }
+    /* Auto scroll to top */
+    .reportview-container {
+        overflow: auto;
+    }
+    .custom-card {
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        margin: 10px 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================
-# APP CONSTANTS
+# KONSTANTA APLIKASI
 # ============================================
 DASS21_OPTIONS = [
     "Tidak sesuai dengan saya sama sekali",
@@ -133,7 +144,7 @@ predefined_stories = [
 ]
 
 # ============================================
-# UTILITY FUNCTIONS
+# FUNGSI UTILITAS
 # ============================================
 def get_download_link(df, filename):
     csv = df.to_csv(index=False)
@@ -192,7 +203,7 @@ def extract_stories_from_docx(file_path):
         return predefined_stories
 
 # ============================================
-# SCORE CALCULATION FUNCTIONS
+# FUNGSI PERHITUNGAN SKOR
 # ============================================
 def calculate_dass21_scores(responses):
     scores = {"Depresi": 0, "Kecemasan": 0, "Stres": 0}
@@ -281,6 +292,13 @@ def save_session_results(condition):
                 result_data[f"Tugas_Aritmatika_{i+1}_Soal"] = answer['problem']
                 result_data[f"Tugas_Aritmatika_{i+1}_Jawaban"] = answer['user_answer']
                 result_data[f"Tugas_Aritmatika_{i+1}_Benar"] = answer['is_correct']
+                
+            # Tambahkan statistik ringkasan untuk 30 soal
+            all_answers = st.session_state.answers
+            correct_answers = sum(1 for a in all_answers if a['is_correct'])
+            result_data["Total_Soal_Aritmatika"] = len(all_answers)
+            result_data["Total_Jawaban_Benar"] = correct_answers
+            result_data["Persentase_Jawaban_Benar"] = round((correct_answers / len(all_answers)) * 100, 2) if all_answers else 0
     
     if condition == "Tahap 3":
         result_data["Topik Presentasi"] = st.session_state.get("high_presentation_topic", "")
@@ -296,6 +314,10 @@ def save_session_results(condition):
                 if not item['correct']:
                     result_data[f"Tugas_Aritmatika_{i+1}_Jawaban_Benar"] = item.get('correct_answer', '')
     
+    if condition == "Tahap 4":
+        result_data["Jenis_Relaksasi"] = "PMR dan Musik"
+        result_data["Durasi_Relaksasi"] = "9 menit 12 detik"
+    
     if 'results' not in st.session_state:
         st.session_state.results = []
     st.session_state.results.append(result_data)
@@ -305,7 +327,7 @@ def save_session_results(condition):
     st.session_state.completed_conditions.append(condition)
 
 # ============================================
-# APPLICATION PAGES
+# HALAMAN APLIKASI
 # ============================================
 def data_diri_page():
     st.title("📝 Data Diri")
@@ -326,20 +348,153 @@ def data_diri_page():
             tb = st.number_input("Tinggi Badan (cm)", min_value=0.0, max_value=300.0, step=0.1, key="tb")
     
     st.markdown("---")
+    st.markdown("### Kebiasaan Sehari-hari")
+    
+    with st.container():
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Pertanyaan tentang konsumsi kopi dengan penjelasan tambahan
+            st.markdown("""
+            <div style='margin-bottom: 10px;'>
+                <p><b>Berapa jam yang lalu terakhir minum kopi?</b></p>
+                <p style='font-size: 14px; color: #666; margin-top: -5px;'>
+                    * Jika Anda tidak minum kopi sama sekali, masukkan angka 0<br>
+                    * Jika Anda minum kopi, masukkan berapa jam yang lalu (contoh: 2 untuk 2 jam yang lalu)
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            kopi_jam = st.number_input(
+                "Jam terakhir konsumsi kopi", 
+                min_value=0, 
+                max_value=72, 
+                step=1,
+                help="Untuk pengukuran stres yang akurat, disarankan tidak minum kopi minimal 1 jam sebelum tes. Masukkan 0 jika tidak minum kopi.",
+                label_visibility="collapsed"
+            )
+            
+        with col2:
+            # Pertanyaan tentang durasi tidur
+            durasi_tidur = st.number_input(
+                "Berapa jam Anda tidur tadi malam?", 
+                min_value=0, 
+                max_value=12, 
+                step=1,
+                help="Durasi tidur mempengaruhi tingkat stres"
+            )
+    
+    st.markdown("---")
     col_btn = st.columns([1, 3, 1])
     with col_btn[1]:
         if st.button("✅ Simpan dan Lanjut ke Tahap 1", use_container_width=True, key="save_personal_data"):
             if not nama or umur <= 0 or bb <= 0 or tb <= 0:
                 st.error("Mohon lengkapi semua data dengan benar!")
+            elif kopi_jam < 1 and kopi_jam != 0:  # Memeriksa jika minum kopi < 1 jam yang lalu dan bukan 0 (tidak minum)
+                st.warning("Untuk hasil pengukuran stres yang akurat, disarankan tidak minum kopi minimal 1 jam sebelum tes. Anda bisa melanjutkan, tetapi hasil mungkin terpengaruh.")
+                st.session_state.data_diri = {
+                    "Nama": nama, "Umur": umur, "Jenis Kelamin": gender,
+                    "Berat Badan (kg)": bb, "Tinggi Badan (cm)": tb,
+                    "Terakhir Minum Kopi (jam)": "Tidak minum kopi" if kopi_jam == 0 else f"{kopi_jam} jam yang lalu",
+                    "Durasi Tidur (jam)": durasi_tidur,
+                    "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                }
+                st.session_state.page = "tahap1"
+                st.rerun()
             else:
                 st.session_state.data_diri = {
                     "Nama": nama, "Umur": umur, "Jenis Kelamin": gender,
                     "Berat Badan (kg)": bb, "Tinggi Badan (cm)": tb,
+                    "Terakhir Minum Kopi (jam)": "Tidak minum kopi" if kopi_jam == 0 else f"{kopi_jam} jam yang lalu",
+                    "Durasi Tidur (jam)": durasi_tidur,
                     "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
                 st.session_state.page = "tahap1"
                 st.rerun()
 
+def rest_timer_page():
+    # First, clear any remaining arithmetic history when entering this page
+    if 'answers' in st.session_state:
+        del st.session_state.answers
+    
+    # Clear the page completely
+    st.empty()
+    
+    st.title("⏳ Waktu Istirahat")
+    st.markdown("---")
+    
+    # Initialize timer state
+    if 'rest_start_time' not in st.session_state:
+        st.session_state.rest_start_time = time.time()
+        st.session_state.timer_finished = False
+    
+    # Calculate remaining time
+    current_time = time.time()
+    elapsed = current_time - st.session_state.rest_start_time
+    time_left = max(0, 60 - elapsed)  
+    
+    st.markdown("""
+    <div class='medium-font'>
+    Silakan beristirahat sejenak sebelum melanjutkan ke tahap berikutnya.
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Progress bar
+    progress = min(elapsed / 60, 1.0)  
+    st.progress(progress)
+    
+    # Display remaining time
+    minutes = int(time_left // 60)
+    seconds = int(time_left % 60)
+    time_display = st.empty()
+    time_display.markdown(f"### Waktu Istirahat Tersisa: {minutes:02d}:{seconds:02d}")
+    
+    # Container for the button - will only be filled when timer is done
+    button_container = st.empty()
+    
+    if time_left <= 0:
+        # Clear all arithmetic-related state
+        keys_to_clear = [
+            'arithmetic_problems', 
+            'current_problem', 
+            'answers', 
+            'task_completed',
+            'arithmetic_history'
+        ]
+        for key in keys_to_clear:
+            if key in st.session_state:
+                del st.session_state[key]
+        
+        st.session_state.timer_finished = True
+        time_display.markdown("### Waktu istirahat telah habis!")
+        
+        # Only now we add the button to the container
+        with button_container.container():
+            col_btn = st.columns([1, 2, 1])
+            with col_btn[1]:
+                if st.button("➡️ Lanjut ke Tahap Berikutnya", key="next_after_rest"):
+                    # Clear timer state
+                    keys_to_clear = ['rest_start_time', 'timer_finished']
+                    for key in keys_to_clear:
+                        if key in st.session_state:
+                            del st.session_state[key]
+                    
+                    # Determine next page based on current condition
+                    if st.session_state.current_condition == "Tahap 1":
+                        st.session_state.page = "dass21"
+                    elif st.session_state.current_condition == "Tahap 2":
+                        st.session_state.page = "dass21"
+                    elif st.session_state.current_condition == "Tahap 3":
+                        st.session_state.page = "dass21"
+                    elif st.session_state.current_condition == "Tahap 4":
+                        st.session_state.page = "dass21"
+                    st.rerun()
+    else:
+        # Don't add anything to the button container when timer is running
+        # This ensures no button will appear
+        time.sleep(0.1)
+        st.rerun()
+        
 def tahap1_page():
     st.title("📖 Tahap 1 - Membaca Materi Netral")
     st.markdown("---")
@@ -347,7 +502,7 @@ def tahap1_page():
     st.markdown("""
     <div class='medium-font'>
     <b>Instruksi:</b><br>
-    Anda akan membaca materi netral selama 5-10 menit. 
+    Anda akan membaca materi netral selama 5 menit. 
     Silakan tekan tombol di bawah untuk memulai.
     </div>
     """, unsafe_allow_html=True)
@@ -402,6 +557,244 @@ def tahap3_page():
             st.session_state.page = "high_prep"
             st.rerun()
 
+def tahap4_page():
+    st.title("🧘 Tahap 4 - Relaksasi")
+    st.markdown("---")
+    
+    st.markdown("""
+    <div class='medium-font'>
+    <b>Instruksi:</b><br>
+    Anda akan melalui 3 sesi relaksasi:<br>
+    1. Progressive Muscle Relaxation (PMR)>
+    2. Mendengarkan musik menenangkan<br>
+    3. Evaluasi perasaan setelah relaksasi <br><br>
+    Tekan tombol di bawah untuk memulai.
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    col_btn = st.columns([1, 2, 1])
+    with col_btn[1]:
+        if st.button("▶️ Mulai Sesi Relaksasi", key="start_relaxation"):
+            st.session_state.current_condition = "Tahap 4"
+            st.session_state.page = "pmr_session"
+            st.rerun()
+
+def pmr_session_page():
+    if 'pmr_stage' not in st.session_state:
+        st.session_state.pmr_stage = "instructions"
+        st.session_state.pmr_start_time = None
+    
+    if st.session_state.pmr_stage == "instructions":
+        st.title("🧘 Instruksi Progressive Muscle Relaxation (PMR)")
+        st.markdown("---")
+        
+        st.markdown("""
+        <div class='medium-font'>
+        <b>Instruksi PMR:</b><br>
+        1. Anda akan menonton video panduan PMR <br>
+        2. Klik tombol play pada video untuk memulai sesi PMR<br>
+        3. Ikuti semua instruksi yang diberikan dalam video<br>        
+        4. Cari posisi yang nyaman sebelum memulai<br>
+    
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        col_btn = st.columns([1, 2, 1])
+        with col_btn[1]:
+            if st.button("▶️ Mulai Sesi PMR", key="start_pmr_session"):
+                st.session_state.pmr_stage = "session"
+                st.rerun()
+    
+    elif st.session_state.pmr_stage == "session":
+        st.title("🧘 Progressive Muscle Relaxation (PMR)")
+        st.markdown("---")
+        
+        # YouTube Video Embed
+        st.markdown("""
+        <div style="display: flex; justify-content: center; margin: 20px 0;">
+            <iframe width="560" height="315" 
+            src="https://www.youtube.com/embed/4G--3DHybhM?autoplay=1&rel=0" 
+            frameborder="0" 
+            allowfullscreen>
+            </iframe>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Initialize PMR session timer
+        if st.session_state.pmr_start_time is None:
+            st.session_state.pmr_start_time = time.time()
+        
+        elapsed = time.time() - st.session_state.pmr_start_time
+        time_left = max(0, 270 - elapsed)  # 4 menit 30 detik = 270 detik
+        
+        # Progress bar
+        st.progress(min(elapsed/270, 1.0))
+        st.markdown(f"### Waktu PMR Tersisa: {int(time_left//60):02d}:{int(time_left%60):02d}")
+        
+        if time_left <= 0:
+            col_btn = st.columns([1, 2, 1])
+            with col_btn[1]:
+                if st.button("➡️ Lanjut ke Sesi Musik", key="next_to_music"):
+                    st.session_state.page = "music_instructions"
+                    st.rerun()
+        else:
+            time.sleep(1)
+            st.rerun()
+
+def music_instructions_page():
+    st.title("🎵 Instruksi Musik Menenangkan")
+    st.markdown("---")
+    
+    st.markdown("""
+    <div class='medium-font'>
+    <b>Instruksi:</b><br>
+    1. Anda akan mendengarkan musik relaksasi selama 5 menit<br>
+    2. Klik tombol play pada musik untuk memulai sesi PMR<br>            
+    3. Fokus pada pernapasan dan relaksasi<br>
+    4. Tutup mata jika membantu Anda lebih rileks<br><br>
+
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    col_btn = st.columns([1, 2, 1])
+    with col_btn[1]:
+        if st.button("▶️ Mulai Sesi Musik", key="start_music_session"):
+            st.session_state.page = "music_session"
+            st.rerun()
+
+def music_session_page():
+    st.title("🎵 Sesi Musik Menenangkan")
+    st.markdown("---")
+    
+    if 'music_start_time' not in st.session_state:
+        st.session_state.music_start_time = time.time()
+    
+    # Audio player dengan musik The Blue Danube
+    audio_file = open('the-blue-danube-op-314-johann-strauss-ii-arranged-for-solo-piano-212208 (mp3cut.net)mp3', 'rb')
+    audio_bytes = audio_file.read()
+    
+    st.audio(audio_bytes, format='audio/mp3', start_time=0)
+    
+    elapsed = time.time() - st.session_state.music_start_time
+    time_left = max(0, 330 - elapsed)  # 5 menit = 300 detik
+    
+    # Progress bar
+    st.progress(min(elapsed/330, 1.0))
+    st.markdown(f"### Waktu Musik Tersisa: {int(time_left//60):02d}:{int(time_left%60):02d}")
+    
+    if time_left <= 0:
+        col_btn = st.columns([1, 2, 1])
+        with col_btn[1]:
+            if st.button("➡️ Lanjut ke Evaluasi Perasaan", key="next_to_feeling_eval"):
+                st.session_state.page = "feeling_evaluation"
+                st.rerun()
+    else:
+        time.sleep(1)
+        st.rerun()
+
+def feeling_evaluation_page():
+    st.title("💭 Evaluasi Perasaan Setelah Relaksasi")
+    st.markdown("---")
+    
+    # Initialize all session state variables
+    if 'feeling_stage' not in st.session_state:
+        st.session_state.feeling_stage = "preparation"
+        st.session_state.feeling_response = ""
+        st.session_state.prep_start_time = time.time()
+        st.session_state.presentation_start_time = None
+        st.session_state.feeling_completed = False
+        st.session_state.show_continue_button = False
+    
+    # Preparation Stage
+    if st.session_state.feeling_stage == "preparation":
+        st.markdown("""
+        <div class='medium-font'>
+        <b>Instruksi Persiapan (1 menit):</b><br>
+        1. Pikirkan perubahan emosi yang Anda rasakan<br>
+        2. Presentasikan secara jelas dan terstruktur
+        3. Siapkan poin-poin utama yang ingin disampaikanbr>
+        4. Anda akan presentasikan selama 3 menit
+        </div>
+        """, unsafe_allow_html=True)
+        
+        elapsed = time.time() - st.session_state.prep_start_time
+        prep_time_left = max(0, 60 - elapsed)
+        
+        st.progress(min(elapsed/60, 1.0))
+        st.markdown(f"### Waktu Persiapan Tersisa: {int(prep_time_left//60):02d}:{int(prep_time_left%60):02d}")
+        
+        st.session_state.feeling_response = st.text_area(
+            "Tulis evaluasi perasaan Anda:",
+            value=st.session_state.feeling_response,
+            height=200,
+            key="feeling_prep_input"
+        )
+        
+        # Only allow continue after time is up
+        if prep_time_left <= 0:
+            st.session_state.show_continue_button = True
+        
+        if st.session_state.show_continue_button:
+            col_btn = st.columns([1, 2, 1])
+            with col_btn[1]:
+                if st.button("🎤 Lanjut ke Presentasi", key="continue_to_presentation"):
+                    st.session_state.feeling_stage = "presentation"
+                    st.session_state.presentation_start_time = time.time()
+                    st.session_state.show_continue_button = False
+                    st.rerun()
+        else:
+            time.sleep(0.1)
+            st.rerun()
+    
+    # Presentation Stage
+    elif st.session_state.feeling_stage == "presentation":
+        st.markdown("### Silakan sampaikan evaluasi Anda kepada evaluator")
+        
+        elapsed = time.time() - st.session_state.presentation_start_time
+        presentation_time_left = max(0, 180 - elapsed)
+        
+        st.progress(min(elapsed/180, 1.0))
+        st.markdown(f"### Waktu Presentasi Tersisa: {int(presentation_time_left//60):02d}:{int(presentation_time_left%60):02d}")
+        
+        st.markdown("#### Catatan Anda:")
+        st.markdown(f'<div class="custom-card">{st.session_state.feeling_response}</div>', unsafe_allow_html=True)
+        
+        # Only allow continue after time is up
+        if presentation_time_left <= 0:
+            st.session_state.feeling_completed = True
+            st.session_state.show_continue_button = True
+        
+        if st.session_state.show_continue_button:
+            col_btn = st.columns([1, 2, 1])
+            with col_btn[1]:
+                if st.button("➡️ Lanjut ke Istirahat", key="proceed_to_rest"):
+                    # Save response
+                    if 'relaxation_responses' not in st.session_state:
+                        st.session_state.relaxation_responses = []
+                    st.session_state.relaxation_responses.append({
+                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "response": st.session_state.feeling_response
+                    })
+                    
+                    # Clear state
+                    keys_to_clear = [
+                        'feeling_stage', 'feeling_response', 
+                        'prep_start_time', 'presentation_start_time',
+                        'feeling_completed', 'show_continue_button'
+                    ]
+                    for key in keys_to_clear:
+                        if key in st.session_state:
+                            del st.session_state[key]
+                    
+                    st.session_state.page = "rest_timer"
+                    st.rerun()
+        else:
+            time.sleep(0.1)
+            st.rerun()
+
 def high_prep_page():
     st.title("📝 Persiapan Presentasi - Tahap 3")
     st.markdown("---")
@@ -410,10 +803,10 @@ def high_prep_page():
         st.session_state.high_prep_start_time = time.time()
     
     elapsed = time.time() - st.session_state.high_prep_start_time
-    prep_time_left = max(0, 3 - elapsed)
+    prep_time_left = max(0, 300 - elapsed)
     
     if 'high_presentation_topic' not in st.session_state:
-        st.session_state.high_presentation_topic = random.choice(["Kelemahan Anda", "Mengapa Anda cocok untuk pekerjaan"])
+        st.session_state.high_presentation_topic = random.choice(["Kelemahan Anda"])
     
     st.markdown("### Topik Presentasi Anda:")
     st.markdown(f"<div style='padding:10px; background-color:#ffcccb; border-radius:5px; color:#ff0000; font-size:24px; font-weight:bold;'>{st.session_state.high_presentation_topic}</div>", unsafe_allow_html=True)
@@ -452,7 +845,7 @@ def high_presentation_page():
         st.session_state.high_presentation_start_time = time.time()
     
     elapsed = time.time() - st.session_state.high_presentation_start_time
-    presentation_time_left = max(0, 3 - elapsed)
+    presentation_time_left = max(0, 300 - elapsed)
     
     st.markdown("### Topik Presentasi Anda:")
     st.markdown(f"<div style='padding:10px; background-color:#ffcccb; border-radius:5px; color:#ff0000; font-size:24px; font-weight:bold;'>{st.session_state.high_presentation_topic}</div>", unsafe_allow_html=True)
@@ -503,7 +896,7 @@ def high_arithmetic_page():
     st.markdown("---")
     
     elapsed = time.time() - st.session_state.arithmetic_start_time
-    time_left = max(0, 3 - elapsed)
+    time_left = max(0, 300 - elapsed)
     
     minutes, seconds = divmod(int(time_left), 60)
     st.markdown(f"### Waktu Tersisa: {minutes:02d}:{seconds:02d}")
@@ -515,8 +908,8 @@ def high_arithmetic_page():
         st.success("Waktu tugas aritmatika telah habis!")
         col_btn = st.columns([1, 2, 1])
         with col_btn[1]:
-            if st.button("➡️ Lanjut ke Kuesioner", key="finish_high_arithmetic"):
-                st.session_state.page = "dass21"
+            if st.button("➡️ Lanjut ke Istirahat", key="finish_high_arithmetic"):
+                st.session_state.page = "rest_timer"
                 st.rerun()
     else:
         time.sleep(1)
@@ -556,48 +949,41 @@ def cerita_setup_page():
     col1, col2 = st.columns(2)
     
     with col1:
-        # Initialize font_size in session_state if it doesn't exist
         if 'font_size' not in st.session_state:
             st.session_state.font_size = 16
             
-        # Use the session_state value as the default for the slider
         font_size = st.slider(
             "Ukuran Font", 
             12, 24, 
-            st.session_state.font_size,  # Use current value as default
-            key="font_size_slider"  # Different key from the session_state variable
+            st.session_state.font_size,
+            key="font_size_slider"
         )
-        # Update session_state only if the slider value changes
         if font_size != st.session_state.font_size:
             st.session_state.font_size = font_size
     
     with col2:
-        # Initialize auto_scroll in session_state if it doesn't exist
         if 'auto_scroll' not in st.session_state:
             st.session_state.auto_scroll = False
             
         auto_scroll = st.checkbox(
             "Auto-Scroll", 
-            st.session_state.auto_scroll,  # Use current value as default
-            key="auto_scroll_checkbox"  # Different key from the session_state variable
+            st.session_state.auto_scroll,
+            key="auto_scroll_checkbox"
         )
-        # Update session_state only if the checkbox value changes
         if auto_scroll != st.session_state.auto_scroll:
             st.session_state.auto_scroll = auto_scroll
             
         if st.session_state.auto_scroll:
-            # Initialize scroll_speed in session_state if it doesn't exist
             if 'scroll_speed' not in st.session_state:
                 st.session_state.scroll_speed = 1.0
                 
             scroll_speed = st.slider(
                 "Kecepatan Scroll", 
                 0.5, 5.0, 
-                st.session_state.scroll_speed,  # Use current value as default
+                st.session_state.scroll_speed,
                 step=0.5, 
-                key="scroll_speed_slider"  # Different key from the session_state variable
+                key="scroll_speed_slider"
             )
-            # Update session_state only if the slider value changes
             if scroll_speed != st.session_state.scroll_speed:
                 st.session_state.scroll_speed = scroll_speed
     
@@ -676,29 +1062,40 @@ def arithmetic_task_page():
     <b>Instruksi:</b><br>
     1. Selesaikan soal pengurangan/pembagian berikut<br>
     2. Jawab dengan benar untuk melanjutkan ke soal berikutnya<br>
-    3. Total ada 5 soal yang harus diselesaikan
+    3. Total ada 30 soal yang harus diselesaikan
     </div>
     """, unsafe_allow_html=True)
     
+    # Inisialisasi masalah aritmatika
     if 'arithmetic_problems' not in st.session_state:
         st.session_state.arithmetic_problems = []
         st.session_state.current_problem = 0
         st.session_state.answers = []
         st.session_state.task_completed = False
         
-        for _ in range(5):
+        # Meningkatkan jumlah soal menjadi 30 dengan angka ratusan (3 digit)
+        for _ in range(30):
             if random.random() > 0.5:
-                a = random.randint(50, 100)
-                b = random.randint(1, 49)
+                # Pengurangan dengan angka 3 digit (ratusan)
+                a = random.randint(500, 999)  # 3 digit (ratusan)
+                b = random.randint(100, 499)  # 3 digit (ratusan), lebih kecil dari a
                 st.session_state.arithmetic_problems.append({
                     'type': 'pengurangan',
                     'question': f"{a} - {b} = ?",
                     'answer': a - b
                 })
             else:
-                b = random.randint(2, 10)
-                answer = random.randint(5, 12)
-                a = b * answer
+                # Pembagian yang menggunakan angka ratusan
+                b = random.randint(10, 99)  # divisor 2 digit
+                answer = random.randint(10, 99)  # hasil pembagian 2 digit
+                a = b * answer  # hasil perkalian minimal 3 digit (ratusan)
+                
+                # Pastikan a adalah angka ratusan (3 digit)
+                while a < 100 or a > 999:
+                    b = random.randint(10, 99)
+                    answer = random.randint(10, 99)
+                    a = b * answer
+                
                 st.session_state.arithmetic_problems.append({
                     'type': 'pembagian',
                     'question': f"{a} ÷ {b} = ?",
@@ -708,55 +1105,54 @@ def arithmetic_task_page():
     if not st.session_state.task_completed:
         problem = st.session_state.arithmetic_problems[st.session_state.current_problem]
         
-        st.markdown(f"### Soal {st.session_state.current_problem + 1}/5")
+        st.markdown(f"### Soal {st.session_state.current_problem + 1}/30")
         st.markdown(f"<div class='big-font'>{problem['question']}</div>", unsafe_allow_html=True)
         
-        user_answer = st.number_input("Jawaban Anda:", key=f"answer", step=1)
+        # Gunakan key unik untuk setiap soal
+        answer_key = f"answer_{st.session_state.current_problem}"
+        user_answer = st.number_input(
+            "Jawaban Anda:", 
+            key=answer_key,
+            step=1,
+            value=None  # Nilai awal kosong
+        )
         
-        if st.button("✅ Submit Jawaban"):
-            is_correct = (user_answer == problem['answer'])
-            
-            st.session_state.answers.append({
-                'problem': problem['question'],
-                'user_answer': user_answer,
-                'is_correct': is_correct,
-                'timestamp': datetime.now().strftime("%H:%M:%S")
-            })
-            
-            if is_correct:
-                st.success("✅ Jawaban benar! Lanjut ke soal berikutnya.")
-                st.session_state.current_problem += 1
-                
-                if st.session_state.current_problem >= 5:
-                    st.session_state.task_completed = True
+        if st.button("✅ Submit Jawaban", key=f"submit_{st.session_state.current_problem}"):
+            if user_answer is None:
+                st.error("Mohon masukkan jawaban!")
             else:
-                st.error("❌ Jawaban salah. Silakan coba lagi.")
-            
-            st.rerun()
+                is_correct = (user_answer == problem['answer'])
+                
+                st.session_state.answers.append({
+                    'problem': problem['question'],
+                    'user_answer': user_answer,
+                    'is_correct': is_correct,
+                    'timestamp': datetime.now().strftime("%H:%M:%S")
+                })
+                
+                if is_correct:
+                    st.session_state.current_problem += 1
+                    
+                    if st.session_state.current_problem >= 30:  # Diubah dari 5 menjadi 30
+                        st.session_state.task_completed = True
+                    st.rerun()  # Refresh untuk soal baru
+                else:
+                    st.rerun()
         
-        st.progress((st.session_state.current_problem)/5)
-        
-        if st.session_state.answers:
-            st.markdown("#### Riwayat Percobaan:")
-            for i, answer in enumerate(st.session_state.answers[-3:]):
-                status = "✅ Benar" if answer['is_correct'] else "❌ Salah"
-                st.write(f"Soal {i+1}: {answer['problem']} - {status}")
+        st.progress((st.session_state.current_problem)/30)  # Diubah dari 5 menjadi 30
     else:
         st.success("🎉 Anda telah menyelesaikan semua soal aritmatika!")
         
-        correct_count = sum(1 for ans in st.session_state.answers if ans['is_correct'])
-        st.markdown(f"### Total Jawaban Benar: {correct_count}/5")
-        
-        if st.session_state.answers:
-            st.markdown("#### Riwayat Percobaan:")
-            for i, answer in enumerate(st.session_state.answers[-5:]):
-                status = "✅ Benar" if answer['is_correct'] else "❌ Salah"
-                st.write(f"Soal {i+1}: {answer['problem']} - {status}")
-        
         col_btn = st.columns([1, 2, 1])
         with col_btn[1]:
-            if st.button("➡️ Lanjut ke Kuesioner", key="proceed_to_questionnaire"):
-                st.session_state.page = "dass21"
+            if st.button("➡️ Lanjut ke Istirahat", key="proceed_to_rest"):
+                # Bersihkan state aritmatika
+                keys_to_clear = ['arithmetic_problems', 'current_problem', 
+                               'answers', 'task_completed']
+                for key in keys_to_clear:
+                    if key in st.session_state:
+                        del st.session_state[key]
+                st.session_state.page = "rest_timer"
                 st.rerun()
 
 def cerita_page():
@@ -769,12 +1165,38 @@ def cerita_page():
         st.session_state.reading_time_up = False
     
     elapsed = time.time() - st.session_state.reading_start_time
-    time_left = max(0, 3 - elapsed)
+    time_left = max(0, 300 - elapsed)
     
     selected_story = st.session_state.selected_story
     
     minutes, seconds = divmod(int(time_left), 60)
-    st.markdown(f"### Waktu Membaca: {minutes:02d}:{seconds:02d}")
+    
+    # CSS untuk timer yang tetap posisinya (fixed) saat scroll
+    st.markdown("""
+    <style>
+    .fixed-timer {
+        position: fixed;
+        top: 70px;
+        left: 20px;
+        background-color: white;
+        padding: 10px 15px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        z-index: 1000;
+        font-size: 16px;
+        font-weight: bold;
+        color: #333;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # HTML untuk menampilkan timer yang fixed dalam format serupa dengan kode asli
+    st.markdown(
+        f"""
+        <div class="fixed-timer">Waktu Membaca: {minutes:02d}:{seconds:02d}</div>
+        """, 
+        unsafe_allow_html=True
+    )
     
     auto_scroll_css = ""
     if st.session_state.auto_scroll:
@@ -850,8 +1272,8 @@ def cerita_page():
     if st.session_state.reading_time_up:
         col_btn = st.columns([1, 2, 1])
         with col_btn[1]:
-            if st.button("➡️ Lanjut ke Kuesioner", key="next_button"):
-                st.session_state.page = "dass21"
+            if st.button("➡️ Lanjut ke Istirahat", key="next_button"):
+                st.session_state.page = "rest_timer"
                 st.rerun()
     else:
         time.sleep(0.1)
@@ -888,6 +1310,15 @@ def dass21_page():
                 st.error("Mohon jawab semua pertanyaan!")
             else:
                 st.session_state.page = "acute_stress"
+                # Scroll to top
+                components.html(
+                    """
+                    <script>
+                    window.parent.document.querySelector('section.main').scrollTo(0, 0);
+                    </script>
+                    """,
+                    height=0
+                )
                 st.rerun()
 
 def acute_stress_page():
@@ -922,7 +1353,7 @@ def acute_stress_page():
             else:
                 save_session_results(st.session_state.current_condition)
                 
-                conditions = ["Tahap 1", "Tahap 2", "Tahap 3"]
+                conditions = ["Tahap 1", "Tahap 2", "Tahap 3", "Tahap 4"]
                 current_index = conditions.index(st.session_state.current_condition)
                 
                 if current_index < len(conditions) - 1:
@@ -936,6 +1367,15 @@ def acute_stress_page():
                 if 'acute_stress_responses' in st.session_state:
                     del st.session_state.acute_stress_responses
                 
+                # Scroll to top
+                components.html(
+                    """
+                    <script>
+                    window.parent.document.querySelector('section.main').scrollTo(0, 0);
+                    </script>
+                    """,
+                    height=0
+                )
                 st.rerun()
 
 def hasil_page():
@@ -947,7 +1387,7 @@ def hasil_page():
         
         st.markdown("### Ringkasan Hasil")
         
-        conditions = ["Tahap 1", "Tahap 2", "Tahap 3"]
+        conditions = ["Tahap 1", "Tahap 2", "Tahap 3", "Tahap 4"]
         for condition in conditions:
             condition_results = [r for r in st.session_state.results if condition in r["Kondisi"]]
             if condition_results:
@@ -959,6 +1399,8 @@ def hasil_page():
                         st.write(f"- Nama: {result['Nama']}")
                         st.write(f"- Umur: {result['Umur']}")
                         st.write(f"- Jenis Kelamin: {result['Jenis Kelamin']}")
+                        st.write(f"- Terakhir Minum Kopi: {result['Terakhir Minum Kopi (jam)']} jam yang lalu")
+                        st.write(f"- Durasi Tidur: {result['Durasi Tidur (jam)']} jam")
                     with col2:
                         st.markdown("**Hasil Tes:**")
                         st.write(f"- Depresi: {result['Skor DASS21 - Depresi']} ({result['Kategori DASS21 - Depresi']})")
@@ -1003,6 +1445,12 @@ def main():
         "tahap1": tahap1_page,
         "tahap2": tahap2_page,
         "tahap3": tahap3_page,
+        "tahap4": tahap4_page,
+        "rest_timer": rest_timer_page,
+        "pmr_session": pmr_session_page,
+        "music_instructions": music_instructions_page,
+        "music_session": music_session_page,
+        "feeling_evaluation": feeling_evaluation_page,
         "high_prep": high_prep_page,
         "high_presentation": high_presentation_page,
         "high_arithmetic": high_arithmetic_page,
@@ -1025,3 +1473,4 @@ if __name__ == "__main__":
         st.error("Modul python-docx tidak terinstall. Silakan install dengan 'pip install python-docx'")
     
     main()
+
