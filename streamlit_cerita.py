@@ -480,14 +480,19 @@ def rest_timer_page():
                             del st.session_state[key]
                     
                     # Determine next page based on current condition
+                    # Only Tahap 1 shows DASS21, others go directly to acute stress questionnaire
                     if st.session_state.current_condition == "Tahap 1":
                         st.session_state.page = "dass21"
-                    elif st.session_state.current_condition == "Tahap 2":
-                        st.session_state.page = "dass21"
-                    elif st.session_state.current_condition == "Tahap 3":
-                        st.session_state.page = "dass21"
-                    elif st.session_state.current_condition == "Tahap 4":
-                        st.session_state.page = "dass21"
+                    else:
+                        # For Tahap 2, 3, and 4, go directly to acute stress questionnaire
+                        # Initialize empty DASS21 responses for these conditions to maintain data structure
+                        if 'dass21_responses' not in st.session_state:
+                            st.session_state.dass21_responses = {}
+                            for i in range(len(DASS21_QUESTIONS)):
+                                # Set default responses (first option)
+                                st.session_state.dass21_responses[i] = DASS21_OPTIONS[0]
+                        
+                        st.session_state.page = "acute_stress"
                     st.rerun()
     else:
         # Don't add anything to the button container when timer is running
@@ -756,8 +761,9 @@ def feeling_evaluation_page():
         st.markdown("#### Catatan Anda:")
         st.markdown(f'<div class="custom-card">{st.session_state.feeling_response}</div>', unsafe_allow_html=True)
         
-        # Only allow continue after time is up
-        if presentation_time_left <= 0:
+        # Check if time is up
+        if presentation_time_left <= 0 and not st.session_state.feeling_completed:
+            st.session_state.feeling_completed = True
             # Save response
             if 'relaxation_responses' not in st.session_state:
                 st.session_state.relaxation_responses = []
@@ -776,13 +782,11 @@ def feeling_evaluation_page():
                 if key in st.session_state:
                     del st.session_state[key]
             
-            # Langsung pindah ke halaman istirahat tanpa tombol
-            st.session_state.page = "rest_timer"
-            time.sleep(0.5)  # Berikan sedikit waktu
+            st.session_state.page = "rest_timer"  # Langsung ke istirahat
             st.rerun()
-        else:
-            time.sleep(0.1)
-            st.rerun()
+        
+        time.sleep(0.1)
+        st.rerun()
 
 def high_prep_page():
     st.title("📝 Persiapan Presentasi - Tahap 3")
@@ -890,19 +894,17 @@ def high_arithmetic_page():
     minutes, seconds = divmod(int(time_left), 60)
     st.markdown(f"### Waktu Tersisa: {minutes:02d}:{seconds:02d}")
     
-    progress = min(elapsed / 300, 1.0)  # Perbaikan untuk progress bar
+    progress = min(elapsed / 300, 1.0)
     st.progress(progress)
     
     if time_left <= 0:
         st.success("Waktu tugas aritmatika telah habis!")
-        # Langsung pindah ke halaman istirahat tanpa tombol
-        st.session_state.page = "rest_timer"
-        time.sleep(0.5)  # Berikan sedikit waktu untuk pengguna membaca pesan sukses
+        time.sleep(1)  # Tampilkan pesan sukses sebentar
+        st.session_state.page = "rest_timer"  # Langsung ke istirahat
         st.rerun()
     else:
-        time.sleep(1)
+        time.sleep(0.1)
         st.rerun()
-
 def cerita_setup_page():
     st.title(f"⚙️ Pengaturan - {st.session_state.current_condition}")
     st.markdown("---")
@@ -1096,24 +1098,20 @@ def arithmetic_task_page():
         st.session_state.answers = []
         st.session_state.task_completed = False
         
-        # Meningkatkan jumlah soal menjadi 10 dengan angka ratusan (3 digit)
         for _ in range(10):
             if random.random() > 0.5:
-                # Pengurangan dengan angka 3 digit (ratusan)
-                a = random.randint(500, 999)  # 3 digit (ratusan)
-                b = random.randint(100, 499)  # 3 digit (ratusan), lebih kecil dari a
+                a = random.randint(500, 999)
+                b = random.randint(100, 499)
                 st.session_state.arithmetic_problems.append({
                     'type': 'pengurangan',
                     'question': f"{a} - {b} = ?",
                     'answer': a - b
                 })
             else:
-                # Pembagian yang menggunakan angka ratusan
-                b = random.randint(10, 99)  # divisor 2 digit
-                answer = random.randint(10, 99)  # hasil pembagian 2 digit
-                a = b * answer  # hasil perkalian minimal 3 digit (ratusan)
+                b = random.randint(10, 99)
+                answer = random.randint(10, 99)
+                a = b * answer
                 
-                # Pastikan a adalah angka ratusan (3 digit)
                 while a < 100 or a > 999:
                     b = random.randint(10, 99)
                     answer = random.randint(10, 99)
@@ -1131,13 +1129,12 @@ def arithmetic_task_page():
         st.markdown(f"### Soal {st.session_state.current_problem + 1}/10")
         st.markdown(f"<div class='big-font'>{problem['question']}</div>", unsafe_allow_html=True)
         
-        # Gunakan key unik untuk setiap soal
         answer_key = f"answer_{st.session_state.current_problem}"
         user_answer = st.number_input(
             "Jawaban Anda:", 
             key=answer_key,
             step=1,
-            value=None  # Nilai awal kosong
+            value=None
         )
         
         if st.button("✅ Submit Jawaban", key=f"submit_{st.session_state.current_problem}"):
@@ -1156,28 +1153,20 @@ def arithmetic_task_page():
                 if is_correct:
                     st.session_state.current_problem += 1
                     
-                    if st.session_state.current_problem >= 10:  # Diubah dari 5 menjadi 10
+                    if st.session_state.current_problem >= 10:
                         st.session_state.task_completed = True
-                    st.rerun()  # Refresh untuk soal baru
+                        st.session_state.page = "rest_timer"  # Langsung ke istirahat
+                    st.rerun()
                 else:
                     st.rerun()
         
-        st.progress((st.session_state.current_problem)/10)  # Diubah dari 5 menjadi 10
+        st.progress((st.session_state.current_problem)/10)
     else:
         st.success("🎉 Anda telah menyelesaikan semua soal aritmatika!")
-        
-        # Bersihkan state aritmatika
-        keys_to_clear = ['arithmetic_problems', 'current_problem', 
-                       'answers', 'task_completed']
-        for key in keys_to_clear:
-            if key in st.session_state:
-                del st.session_state[key]
-        
-        # Langsung pindah ke halaman istirahat tanpa tombol
-        st.session_state.page = "rest_timer"
-        time.sleep(0.5)  # Berikan sedikit waktu untuk pengguna membaca pesan sukses
+        time.sleep(1)  # Tampilkan pesan sukses sebentar
+        st.session_state.page = "rest_timer"  # Langsung ke istirahat
         st.rerun()
-
+        
 def cerita_page():
     if st.button("⬅️ Kembali ke Pengaturan", key="back_button"):
         st.session_state.page = "cerita_setup"
@@ -1369,7 +1358,10 @@ def acute_stress_page():
     
     col_btn = st.columns([1, 2, 1])
     with col_btn[1]:
-        if st.button("✅ Simpan Jawaban", key="save_acute"):
+        # Update button text based on whether it came from DASS-21 or not
+        button_text = "✅ Simpan Jawaban" if st.session_state.current_condition != "Tahap 1" else "✅ Simpan Jawaban"
+        
+        if st.button(button_text, key="save_acute"):
             if None in st.session_state.acute_stress_responses.values():
                 st.error("Mohon jawab semua pertanyaan!")
             else:
