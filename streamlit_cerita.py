@@ -892,57 +892,91 @@ def high_presentation_page():
         time.sleep(0.1)
         st.rerun()
 
-def high_arithmetic_page():
-    if 'show_arithmetic_instructions' not in st.session_state:
-        st.session_state.show_arithmetic_instructions = True
+def cerita_setup_page():
+    st.title(f"⚙️ Pengaturan - {st.session_state.current_condition}")
+    st.markdown("---")
     
-    if st.session_state.show_arithmetic_instructions:
-        st.title("🧮 Instruksi Tugas Aritmatika - Tahap 3")
-        st.markdown("---")
+    if st.session_state.current_condition == "Tahap 2":
+        st.markdown("### Persiapan Presentasi")
+        
+        if 'selected_topic' not in st.session_state:
+            st.session_state.selected_topic = random.choice(PRESENTATION_TOPICS)
+        
+        st.markdown("#### Topik Presentasi Anda:")
+        st.markdown(f"<div style='padding:10px; background-color:#cce5ff; border-radius:5px; font-size:24px; font-weight:bold;'>{st.session_state.selected_topic}</div>", unsafe_allow_html=True)
         
         st.markdown("""
         <div class='medium-font'>
         <b>Instruksi:</b><br>
-        1. Hitung pengurangan serial mulai dari 1022 dengan pengurangan 13<br>
-        2. Anda memiliki waktu 5 menit<br>
-        3. Jika salah, Anda harus memulai kembali dari 1022
+        1. Siapkan presentasi singkat tentang topik di atas<br>
+        2. Presentasikan secara jelas dan terstruktur<br>
+        3. Siapkan poin-poin utama yang ingin disampaikan
         </div>
         """, unsafe_allow_html=True)
         
-        st.markdown("---")
         col_btn = st.columns([1, 2, 1])
         with col_btn[1]:
-            if st.button("▶️ Mulai Tugas", key="start_arithmetic"):
-                st.session_state.show_arithmetic_instructions = False
-                st.session_state.arithmetic_start_time = time.time()
+            if st.button("▶️ Mulai Persiapan Presentasi", key="start_presentation"):
+                st.session_state.page = "presentation_prep"
                 st.rerun()
+        
         return
     
-    st.title("⏱️ Tugas Aritmatika - Tahap 3")
-    st.markdown("---")
+    st.markdown("### Pengaturan Tampilan Teks")
+    col1, col2 = st.columns(2)
     
-    elapsed = time.time() - st.session_state.arithmetic_start_time
-    time_left = max(0, 300 - elapsed)
+    with col1:
+        if 'font_size' not in st.session_state:
+            st.session_state.font_size = 16
+            
+        font_size = st.slider(
+            "Ukuran Font", 
+            12, 24, 
+            st.session_state.font_size,
+            key="font_size_slider"
+        )
+        if font_size != st.session_state.font_size:
+            st.session_state.font_size = font_size
     
-    minutes, seconds = divmod(int(time_left), 60)
-    st.markdown(f"### Waktu Tersisa: {minutes:02d}:{seconds:02d}")
+    with col2:
+        if 'auto_scroll' not in st.session_state:
+            st.session_state.auto_scroll = False
+            
+        auto_scroll = st.checkbox(
+            "Auto-Scroll", 
+            st.session_state.auto_scroll,
+            key="auto_scroll_checkbox"
+        )
+        if auto_scroll != st.session_state.auto_scroll:
+            st.session_state.auto_scroll = auto_scroll
+            
+        if st.session_state.auto_scroll:
+            if 'scroll_speed' not in st.session_state:
+                st.session_state.scroll_speed = 1.0
+                
+            scroll_speed = st.slider(
+                "Kecepatan Scroll", 
+                0.5, 5.0, 
+                st.session_state.scroll_speed,
+                step=0.5, 
+                key="scroll_speed_slider"
+            )
+            if scroll_speed != st.session_state.scroll_speed:
+                st.session_state.scroll_speed = scroll_speed
     
-    progress = min(elapsed / 300, 1.0)
-    st.progress(progress)
+    st.markdown("### Mulai Pembacaan Cerita")
+    if 'stories_loaded' not in st.session_state:
+        st.session_state.stories = extract_stories_from_docx("Kumpulan Cerita.docx")
+        st.session_state.stories_loaded = True
     
-    if time_left <= 0:
-        st.success("Waktu tugas aritmatika telah habis!")
-        col_btn = st.columns([1, 2, 1])
-        with col_btn[1]:
-            if st.button("➡️ Lanjut ke Istirahat", key="finish_high_arithmetic"):
-                st.session_state.page = "rest_timer"
+    col_btn = st.columns([1, 2, 1])
+    with col_btn[1]:
+        if st.button("🔀 Acak Cerita dan Mulai Membaca", key="start_reading"):
+            if st.session_state.stories:
+                st.session_state.selected_story = random.choice(st.session_state.stories)
+                st.session_state.page = "cerita"
                 st.rerun()
-    else:
-        time.sleep(1)
-        st.rerun()
 
-import time
-import streamlit as st
 
 def presentation_page():
     st.title("🎤 Presentasi - Tahap 2")
