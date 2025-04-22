@@ -1434,10 +1434,30 @@ def hasil_page():
                         st.write(f"- Durasi Tidur: {result['Durasi Tidur (jam)']} jam")
                     with col2:
                         st.markdown("**Hasil Tes:**")
-                        st.write(f"- Depresi: {result['Skor DASS21 - Depresi']} ({result['Kategori DASS21 - Depresi']})")
-                        st.write(f"- Kecemasan: {result['Skor DASS21 - Kecemasan']} ({result['Kategori DASS21 - Kecemasan']})")
-                        st.write(f"- Stres: {result['Skor DASS21 - Stres']} ({result['Kategori DASS21 - Stres']})")
+                        
+                        # Only display DASS-21 results for Tahap 1
+                        if condition == "Tahap 1":
+                            st.write(f"- Depresi: {result['Skor DASS21 - Depresi']} ({result['Kategori DASS21 - Depresi']})")
+                            st.write(f"- Kecemasan: {result['Skor DASS21 - Kecemasan']} ({result['Kategori DASS21 - Kecemasan']})")
+                            st.write(f"- Stres: {result['Skor DASS21 - Stres']} ({result['Kategori DASS21 - Stres']})")
+                        
+                        # Always display Acute Stress results
                         st.write(f"- Stres Akut: {result['Skor Respons Stres Akut']} ({result['Kategori Respons Stres Akut']})")
+                        
+                        # Display condition-specific results
+                        if condition == "Tahap 2" and "Topik Presentasi" in result:
+                            st.write(f"- Topik Presentasi: {result['Topik Presentasi']}")
+                            if "Total_Soal_Aritmatika" in result:
+                                st.write(f"- Soal Aritmatika Benar: {result['Total_Jawaban_Benar']}/{result['Total_Soal_Aritmatika']}")
+                        
+                        if condition == "Tahap 3" and "Topik Presentasi" in result:
+                            st.write(f"- Topik Presentasi: {result['Topik Presentasi']}")
+                            if "Jumlah Percobaan Aritmatika" in result:
+                                st.write(f"- Percobaan Aritmatika: {result['Jumlah Percobaan Aritmatika']}")
+                        
+                        if condition == "Tahap 4" and "Jenis_Relaksasi" in result:
+                            st.write(f"- Jenis Relaksasi: {result['Jenis_Relaksasi']}")
+                            st.write(f"- Durasi Relaksasi: {result['Durasi_Relaksasi']}")
         
         st.markdown("### Data Lengkap")
         st.dataframe(df)
@@ -1453,7 +1473,7 @@ def hasil_page():
             st.rerun()
     else:
         st.warning("Belum ada data hasil. Silakan lengkapi semua tahap terlebih dahulu.")
-
+        
 # ============================================
 # MAIN APP
 # ============================================
