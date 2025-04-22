@@ -1109,7 +1109,7 @@ def arithmetic_task_page():
     <b>Instruksi:</b><br>
     1. Selesaikan soal pengurangan/pembagian berikut<br>
     2. Jawab dengan benar untuk melanjutkan ke soal berikutnya<br>
-    3. Total ada 30 soal yang harus diselesaikan
+    3. Total ada 10 soal yang harus diselesaikan
     </div>
     """, unsafe_allow_html=True)
     
@@ -1121,7 +1121,7 @@ def arithmetic_task_page():
         st.session_state.task_completed = False
         
         # Meningkatkan jumlah soal menjadi 30 dengan angka ratusan (3 digit)
-        for _ in range(30):
+        for _ in range(10):
             if random.random() > 0.5:
                 # Pengurangan dengan angka 3 digit (ratusan)
                 a = random.randint(500, 999)  # 3 digit (ratusan)
@@ -1152,7 +1152,7 @@ def arithmetic_task_page():
     if not st.session_state.task_completed:
         problem = st.session_state.arithmetic_problems[st.session_state.current_problem]
         
-        st.markdown(f"### Soal {st.session_state.current_problem + 1}/30")
+        st.markdown(f"### Soal {st.session_state.current_problem + 1}/10")
         st.markdown(f"<div class='big-font'>{problem['question']}</div>", unsafe_allow_html=True)
         
         # Gunakan key unik untuk setiap soal
@@ -1180,13 +1180,13 @@ def arithmetic_task_page():
                 if is_correct:
                     st.session_state.current_problem += 1
                     
-                    if st.session_state.current_problem >= 30:  # Diubah dari 5 menjadi 30
+                    if st.session_state.current_problem >= 10:  # Diubah dari 5 menjadi 30
                         st.session_state.task_completed = True
                     st.rerun()  # Refresh untuk soal baru
                 else:
                     st.rerun()
         
-        st.progress((st.session_state.current_problem)/30)  # Diubah dari 5 menjadi 30
+        st.progress((st.session_state.current_problem)/10)  # Diubah dari 5 menjadi 30
     else:
         st.success("🎉 Anda telah menyelesaikan semua soal aritmatika!")
         
