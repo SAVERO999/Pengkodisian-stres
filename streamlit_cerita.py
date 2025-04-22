@@ -803,7 +803,7 @@ def high_prep_page():
         st.session_state.high_prep_start_time = time.time()
     
     elapsed = time.time() - st.session_state.high_prep_start_time
-    prep_time_left = max(0, 300 - elapsed)
+    prep_time_left = max(0, 180 - elapsed)
     
     if 'high_presentation_topic' not in st.session_state:
         st.session_state.high_presentation_topic = random.choice(["Kelemahan Anda"])
@@ -1008,7 +1008,7 @@ def presentation_prep_page():
         st.session_state.prep_start_time = time.time()
     
     elapsed = time.time() - st.session_state.prep_start_time
-    time_left = max(0, 300 - elapsed)
+    time_left = max(0, 180 - elapsed)
 
     st.markdown("### Topik Presentasi Anda:")
     st.markdown(f"<div style='padding:10px; background-color:#cce5ff; border-radius:5px; font-size:24px; font-weight:bold;'>{st.session_state.selected_topic}</div>", unsafe_allow_html=True)
