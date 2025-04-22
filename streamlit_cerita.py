@@ -941,91 +941,58 @@ def high_arithmetic_page():
         time.sleep(1)
         st.rerun()
 
-def cerita_setup_page():
-    st.title(f"⚙️ Pengaturan - {st.session_state.current_condition}")
+import time
+import streamlit as st
+
+def presentation_page():
+    st.title("🎤 Presentasi - Tahap 2")
     st.markdown("---")
     
-    if st.session_state.current_condition == "Tahap 2":
-        st.markdown("### Persiapan Presentasi")
+    st.markdown("### Topik Presentasi Anda:")
+    st.markdown(f"<div style='padding:10px; background-color:#cce5ff; border-radius:5px; font-size:24px; font-weight:bold;'>{st.session_state.selected_topic}</div>", unsafe_allow_html=True)
+    st.markdown("### Catatan Persiapan Anda:")
+    st.write(st.session_state.presentation_notes)
+    
+    # Timer section
+    st.markdown("---")
+    st.markdown("### ⏳ Timer Presentasi (5 menit)")
+    
+    # Initialize timer only once
+    if 'timer_started' not in st.session_state:
+        st.session_state.timer_started = True
+        st.session_state.start_time = time.time()
+        st.session_state.timer_expired = False
+    
+    # Calculate remaining time
+    current_time = time.time()
+    elapsed_time = current_time - st.session_state.start_time
+    remaining_time = max(300 - elapsed_time, 0)  # 5 minutes = 300 seconds
+    
+    # Display timer
+    if remaining_time > 0 and not st.session_state.timer_expired:
+        minutes, seconds = divmod(int(remaining_time), 60)
+        timer_text = f"⏱️ Waktu tersisa: {minutes:02d}:{seconds:02d}"
+        progress = remaining_time / 300
+        st.progress(progress)
         
-        if 'selected_topic' not in st.session_state:
-            st.session_state.selected_topic = random.choice(PRESENTATION_TOPICS)
+        # Placeholder untuk timer yang terus update
+        timer_placeholder = st.empty()
+        timer_placeholder.markdown(f"<h3 style='text-align:center; color:red;'>{timer_text}</h3>", unsafe_allow_html=True)
         
-        st.markdown("#### Topik Presentasi Anda:")
-        st.markdown(f"<div style='padding:10px; background-color:#cce5ff; border-radius:5px; font-size:24px; font-weight:bold;'>{st.session_state.selected_topic}</div>", unsafe_allow_html=True)
+        # Auto-rerun untuk update timer
+        if remaining_time > 0:
+            st.rerun()
+    else:
+        st.session_state.timer_expired = True
+        st.progress(0)
+        st.markdown("<h3 style='text-align:center; color:red;'>⏰ Waktu presentasi habis!</h3>", unsafe_allow_html=True)
         
-        st.markdown("""
-        <div class='medium-font'>
-        <b>Instruksi:</b><br>
-        1. Siapkan presentasi singkat tentang topik di atas<br>
-        2. Presentasikan secara jelas dan terstruktur<br>
-        3. Siapkan poin-poin utama yang ingin disampaikan
-        </div>
-        """, unsafe_allow_html=True)
-        
+        # Tombol hanya muncul ketika timer habis
         col_btn = st.columns([1, 2, 1])
         with col_btn[1]:
-            if st.button("▶️ Mulai Persiapan Presentasi", key="start_presentation"):
-                st.session_state.page = "presentation_prep"
+            if st.button("➡️ Lanjut ke Tugas Aritmatika", key="finish_presentation"):
+                st.session_state.page = "arithmetic_task"
                 st.rerun()
-        
-        return
-    
-    st.markdown("### Pengaturan Tampilan Teks")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if 'font_size' not in st.session_state:
-            st.session_state.font_size = 16
-            
-        font_size = st.slider(
-            "Ukuran Font", 
-            12, 24, 
-            st.session_state.font_size,
-            key="font_size_slider"
-        )
-        if font_size != st.session_state.font_size:
-            st.session_state.font_size = font_size
-    
-    with col2:
-        if 'auto_scroll' not in st.session_state:
-            st.session_state.auto_scroll = False
-            
-        auto_scroll = st.checkbox(
-            "Auto-Scroll", 
-            st.session_state.auto_scroll,
-            key="auto_scroll_checkbox"
-        )
-        if auto_scroll != st.session_state.auto_scroll:
-            st.session_state.auto_scroll = auto_scroll
-            
-        if st.session_state.auto_scroll:
-            if 'scroll_speed' not in st.session_state:
-                st.session_state.scroll_speed = 1.0
-                
-            scroll_speed = st.slider(
-                "Kecepatan Scroll", 
-                0.5, 5.0, 
-                st.session_state.scroll_speed,
-                step=0.5, 
-                key="scroll_speed_slider"
-            )
-            if scroll_speed != st.session_state.scroll_speed:
-                st.session_state.scroll_speed = scroll_speed
-    
-    st.markdown("### Mulai Pembacaan Cerita")
-    if 'stories_loaded' not in st.session_state:
-        st.session_state.stories = extract_stories_from_docx("Kumpulan Cerita.docx")
-        st.session_state.stories_loaded = True
-    
-    col_btn = st.columns([1, 2, 1])
-    with col_btn[1]:
-        if st.button("🔀 Mulai Membaca", key="start_reading"):
-            if st.session_state.stories:
-                st.session_state.selected_story = random.choice(st.session_state.stories)
-                st.session_state.page = "cerita"
-                st.rerun()
-
 def presentation_prep_page():
     st.title("📝 Persiapan Presentasi - Tahap 2")
     st.markdown("---")
