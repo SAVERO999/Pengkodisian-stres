@@ -333,25 +333,12 @@ def data_diri_page():
     st.title("📝 Data Diri")
     st.markdown("---")
     
-    # Reset riwayat jika nama berubah
-    if 'previous_nama' not in st.session_state:
-        st.session_state.previous_nama = ""
-    
     with st.container():
         col1, col2 = st.columns(2)
         
         with col1:
             st.markdown("### Informasi Pribadi")
             nama = st.text_input("Nama Lengkap", key="nama")
-            
-            # Cek jika nama berubah dan hapus riwayat
-            if nama != st.session_state.previous_nama and nama.strip() != "":
-                if 'results' in st.session_state:
-                    del st.session_state.results
-                if 'completed_conditions' in st.session_state:
-                    del st.session_state.completed_conditions
-                st.session_state.previous_nama = nama
-            
             umur = st.number_input("Umur", min_value=0, max_value=120, step=1, key="umur")
             gender = st.radio("Jenis Kelamin", ["Laki-laki", "Perempuan"], key="gender")
         
@@ -412,13 +399,6 @@ def data_diri_page():
                     "Durasi Tidur (jam)": durasi_tidur,
                     "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
-                
-                # Pastikan riwayat kosong saat memulai
-                if 'results' not in st.session_state:
-                    st.session_state.results = []
-                if 'completed_conditions' not in st.session_state:
-                    st.session_state.completed_conditions = []
-                    
                 st.session_state.page = "tahap1"
                 st.rerun()
             else:
@@ -429,15 +409,9 @@ def data_diri_page():
                     "Durasi Tidur (jam)": durasi_tidur,
                     "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 }
-                
-                # Pastikan riwayat kosong saat memulai
-                if 'results' not in st.session_state:
-                    st.session_state.results = []
-                if 'completed_conditions' not in st.session_state:
-                    st.session_state.completed_conditions = []
-                    
                 st.session_state.page = "tahap1"
                 st.rerun()
+
 def rest_timer_page():
     # First, clear any remaining arithmetic history when entering this page
     if 'answers' in st.session_state:
@@ -548,8 +522,8 @@ def tahap2_page():
     st.markdown("""
     <div class='medium-font'>
     <b>Instruksi:</b><br>
-    1. Anda akan mempersiapkan presentasi tentang topik netral selama 3 menit<br>
-    2. Presentasikan di depan evaluator selama 5 menit<br>
+    1. Anda akan mempersiapkan presentasi tentang topik netral selama 5 menit<br>
+    2. Presentasikan di depan evaluator<br>
     3. Dilanjutkan dengan tugas aritmatika sederhana
     </div>
     """, unsafe_allow_html=True)
@@ -569,8 +543,8 @@ def tahap3_page():
     st.markdown("""
     <div class='medium-font'>
     <b>Instruksi:</b><br>
-    1. Anda akan mempersiapkan presentasi tentang "kelemahan diri" selama 3 menit<br>
-    2. Presentasikan di depan evaluator selama 5 menit<br>
+    1. Anda akan mempersiapkan presentasi tentang "kelemahan diri" selama 5 menit<br>
+    2. Presentasikan di depan evaluator<br>
     3. Dilanjutkan dengan tugas aritmatika sulit (pengurangan serial 13 dari 1022)
     </div>
     """, unsafe_allow_html=True)
@@ -740,8 +714,8 @@ def feeling_evaluation_page():
         <div class='medium-font'>
         <b>Instruksi Persiapan (1 menit):</b><br>
         1. Pikirkan perubahan emosi yang Anda rasakan<br>
-        2. Presentasikan secara jelas dan terstruktur<br>
-        3. Siapkan poin-poin utama yang ingin disampaikan <br>
+        2. Presentasikan secara jelas dan terstruktur
+        3. Siapkan poin-poin utama yang ingin disampaikanbr>
         4. Anda akan presentasikan selama 3 menit
         </div>
         """, unsafe_allow_html=True)
@@ -829,7 +803,7 @@ def high_prep_page():
         st.session_state.high_prep_start_time = time.time()
     
     elapsed = time.time() - st.session_state.high_prep_start_time
-    prep_time_left = max(0, 180 - elapsed)
+    prep_time_left = max(0, 300 - elapsed)
     
     if 'high_presentation_topic' not in st.session_state:
         st.session_state.high_presentation_topic = random.choice(["Kelemahan Anda"])
@@ -891,6 +865,7 @@ def high_presentation_page():
     else:
         time.sleep(0.1)
         st.rerun()
+
 def high_arithmetic_page():
     if 'show_arithmetic_instructions' not in st.session_state:
         st.session_state.show_arithmetic_instructions = True
@@ -1025,56 +1000,6 @@ def cerita_setup_page():
                 st.session_state.page = "cerita"
                 st.rerun()
 
-
-def presentation_page():
-    st.title("🎤 Presentasi - Tahap 2")
-    st.markdown("---")
-    
-    st.markdown("### Topik Presentasi Anda:")
-    st.markdown(f"<div style='padding:10px; background-color:#cce5ff; border-radius:5px; font-size:24px; font-weight:bold;'>{st.session_state.selected_topic}</div>", unsafe_allow_html=True)
-    st.markdown("### Catatan Persiapan Anda:")
-    st.write(st.session_state.presentation_notes)
-    
-    # Timer section
-    st.markdown("---")
-    st.markdown("### ⏳ Timer Presentasi (5 menit)")
-    
-    # Initialize timer only once
-    if 'timer_started' not in st.session_state:
-        st.session_state.timer_started = True
-        st.session_state.start_time = time.time()
-        st.session_state.timer_expired = False
-    
-    # Calculate remaining time
-    current_time = time.time()
-    elapsed_time = current_time - st.session_state.start_time
-    remaining_time = max(300 - elapsed_time, 0)  # 5 minutes = 300 seconds
-    
-    # Display timer
-    if remaining_time > 0 and not st.session_state.timer_expired:
-        minutes, seconds = divmod(int(remaining_time), 60)
-        timer_text = f"⏱️ Waktu tersisa: {minutes:02d}:{seconds:02d}"
-        progress = remaining_time / 300
-        st.progress(progress)
-        
-        # Placeholder untuk timer yang terus update
-        timer_placeholder = st.empty()
-        timer_placeholder.markdown(f"<h3 style='text-align:center; color:red;'>{timer_text}</h3>", unsafe_allow_html=True)
-        
-        # Auto-rerun untuk update timer
-        if remaining_time > 0:
-            st.rerun()
-    else:
-        st.session_state.timer_expired = True
-        st.progress(0)
-        st.markdown("<h3 style='text-align:center; color:red;'>⏰ Waktu presentasi habis!</h3>", unsafe_allow_html=True)
-        
-        # Tombol hanya muncul ketika timer habis
-        col_btn = st.columns([1, 2, 1])
-        with col_btn[1]:
-            if st.button("➡️ Lanjut ke Tugas Aritmatika", key="finish_presentation"):
-                st.session_state.page = "arithmetic_task"
-                st.rerun()
 def presentation_prep_page():
     st.title("📝 Persiapan Presentasi - Tahap 2")
     st.markdown("---")
@@ -1083,7 +1008,7 @@ def presentation_prep_page():
         st.session_state.prep_start_time = time.time()
     
     elapsed = time.time() - st.session_state.prep_start_time
-    time_left = max(0, 180 - elapsed)
+    time_left = max(0, 3 - elapsed)
 
     st.markdown("### Topik Presentasi Anda:")
     st.markdown(f"<div style='padding:10px; background-color:#cce5ff; border-radius:5px; font-size:24px; font-weight:bold;'>{st.session_state.selected_topic}</div>", unsafe_allow_html=True)
@@ -1122,33 +1047,12 @@ def presentation_page():
     st.markdown("### Catatan Persiapan Anda:")
     st.write(st.session_state.presentation_notes)
     
-    # Timer section
-    st.markdown("---")
-    st.markdown("### ⏳ Timer Presentasi (5 menit)")
-    
-    if 'start_time' not in st.session_state:
-        st.session_state.start_time = time.time()
-        st.session_state.timer_expired = False
-    
-    current_time = time.time()
-    elapsed_time = current_time - st.session_state.start_time
-    remaining_time = max(300 - elapsed_time, 0)  # 5 minutes = 300 seconds
-    
-    if remaining_time > 0 and not st.session_state.timer_expired:
-        minutes, seconds = divmod(int(remaining_time), 60)
-        timer_text = f"⏱️ Waktu tersisa: {minutes:02d}:{seconds:02d}"
-        st.progress(remaining_time / 300)
-        st.markdown(f"<h3 style='text-align:center; color:red;'>{timer_text}</h3>", unsafe_allow_html=True)
-    else:
-        st.session_state.timer_expired = True
-        st.markdown("<h3 style='text-align:center; color:red;'>⏰ Waktu presentasi habis!</h3>", unsafe_allow_html=True)
-        
-        # Tombol hanya muncul ketika timer habis
-        col_btn = st.columns([1, 2, 1])
-        with col_btn[1]:
-            if st.button("➡️ Lanjut ke Tugas Aritmatika", key="finish_presentation"):
-                st.session_state.page = "arithmetic_task"
-                st.rerun()
+    col_btn = st.columns([1, 2, 1])
+    with col_btn[1]:
+        if st.button("➡️ Lanjut ke Tugas Aritmatika", key="finish_presentation"):
+            st.session_state.page = "arithmetic_task"
+            st.rerun()
+
 def arithmetic_task_page():
     st.title("🧮 Tugas Aritmatika - Tahap 2")
     st.markdown("---")
@@ -1158,7 +1062,7 @@ def arithmetic_task_page():
     <b>Instruksi:</b><br>
     1. Selesaikan soal pengurangan/pembagian berikut<br>
     2. Jawab dengan benar untuk melanjutkan ke soal berikutnya<br>
-    3. Total ada 10 soal yang harus diselesaikan
+    3. Total ada 30 soal yang harus diselesaikan
     </div>
     """, unsafe_allow_html=True)
     
@@ -1170,7 +1074,7 @@ def arithmetic_task_page():
         st.session_state.task_completed = False
         
         # Meningkatkan jumlah soal menjadi 30 dengan angka ratusan (3 digit)
-        for _ in range(10):
+        for _ in range(30):
             if random.random() > 0.5:
                 # Pengurangan dengan angka 3 digit (ratusan)
                 a = random.randint(500, 999)  # 3 digit (ratusan)
@@ -1201,7 +1105,7 @@ def arithmetic_task_page():
     if not st.session_state.task_completed:
         problem = st.session_state.arithmetic_problems[st.session_state.current_problem]
         
-        st.markdown(f"### Soal {st.session_state.current_problem + 1}/10")
+        st.markdown(f"### Soal {st.session_state.current_problem + 1}/30")
         st.markdown(f"<div class='big-font'>{problem['question']}</div>", unsafe_allow_html=True)
         
         # Gunakan key unik untuk setiap soal
@@ -1229,13 +1133,13 @@ def arithmetic_task_page():
                 if is_correct:
                     st.session_state.current_problem += 1
                     
-                    if st.session_state.current_problem >= 10:  # Diubah dari 5 menjadi 30
+                    if st.session_state.current_problem >= 30:  # Diubah dari 5 menjadi 30
                         st.session_state.task_completed = True
                     st.rerun()  # Refresh untuk soal baru
                 else:
                     st.rerun()
         
-        st.progress((st.session_state.current_problem)/10)  # Diubah dari 5 menjadi 30
+        st.progress((st.session_state.current_problem)/30)  # Diubah dari 5 menjadi 30
     else:
         st.success("🎉 Anda telah menyelesaikan semua soal aritmatika!")
         
@@ -1251,63 +1155,129 @@ def arithmetic_task_page():
                 st.session_state.page = "rest_timer"
                 st.rerun()
 
-def presentation_page():
-    st.title("🎤 Presentasi - Tahap 2")
-    st.markdown("---")
-    
-    # Initialize session state variables if they don't exist
-    if 'selected_topic' not in st.session_state:
-        st.session_state.selected_topic = "Topik belum dipilih"
-    if 'presentation_notes' not in st.session_state:
-        st.session_state.presentation_notes = "Catatan belum dibuat"
-    
-    st.markdown("### Topik Presentasi Anda:")
-    st.markdown(f"<div style='padding:10px; background-color:#cce5ff; border-radius:5px; font-size:24px; font-weight:bold;'>{st.session_state.selected_topic}</div>", unsafe_allow_html=True)
-    st.markdown("### Catatan Persiapan Anda:")
-    st.write(st.session_state.presentation_notes)
-    
-    # Timer section
-    st.markdown("---")
-    st.markdown("### ⏳ Timer Presentasi (5 menit)")
-    
-    # Initialize timer state
-    if 'timer_started' not in st.session_state:
-        st.session_state.timer_started = True
-        st.session_state.start_time = time.time()
-        st.session_state.timer_expired = False
-    
-    # Calculate remaining time
-    current_time = time.time()
-    elapsed_time = current_time - st.session_state.start_time
-    remaining_time = max(300 - elapsed_time, 0)  # 5 minutes = 300 seconds
-    
-    # Create timer display placeholder
-    timer_placeholder = st.empty()
-    progress_bar = st.progress(0)
-    
-    if remaining_time > 0 and not st.session_state.timer_expired:
-        minutes, seconds = divmod(int(remaining_time), 60)
-        timer_text = f"⏱️ Waktu tersisa: {minutes:02d}:{seconds:02d}"
-        progress = remaining_time / 300
-        
-        # Update display
-        progress_bar.progress(progress)
-        timer_placeholder.markdown(f"<h3 style='text-align:center; color:red;'>{timer_text}</h3>", unsafe_allow_html=True)
-        
-        # Auto-rerun for countdown effect
-        time.sleep(1)
+def cerita_page():
+    if st.button("⬅️ Kembali ke Pengaturan", key="back_button"):
+        st.session_state.page = "cerita_setup"
         st.rerun()
+    
+    if 'reading_start_time' not in st.session_state:
+        st.session_state.reading_start_time = time.time()
+        st.session_state.reading_time_up = False
+    
+    elapsed = time.time() - st.session_state.reading_start_time
+    time_left = max(0, 300 - elapsed)
+    
+    selected_story = st.session_state.selected_story
+    
+    minutes, seconds = divmod(int(time_left), 60)
+    
+    # CSS untuk timer yang tetap posisinya (fixed) saat scroll
+    st.markdown("""
+    <style>
+    .fixed-timer {
+        position: fixed;
+        top: 70px;
+        left: 20px;
+        background-color: white;
+        padding: 10px 15px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        z-index: 1000;
+        font-size: 16px;
+        font-weight: bold;
+        color: #333;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # HTML untuk menampilkan timer yang fixed dalam format serupa dengan kode asli
+    st.markdown(
+        f"""
+        <div class="fixed-timer">Waktu Membaca: {minutes:02d}:{seconds:02d}</div>
+        """, 
+        unsafe_allow_html=True
+    )
+    
+    auto_scroll_css = ""
+    if st.session_state.auto_scroll:
+        auto_scroll_css = f"""
+        @keyframes autoscroll {{
+            from {{ transform: translateY(0); }}
+            to {{ transform: translateY(-100%); }}
+        }}
+        .gdocs-text {{
+            animation: autoscroll {100/st.session_state.scroll_speed}s linear forwards;
+            animation-delay: 1s;
+            padding-bottom: 100vh !important;
+        }}
+        .scroll-container {{
+            height: 80vh;
+            overflow: hidden;
+            position: relative;
+        }}
+        """
+    
+    st.markdown(f"""
+    <style>
+    .gdocs-text {{
+        font-family: 'Arial', sans-serif;
+        font-size: {st.session_state.font_size}px;
+        line-height: 1.6;
+        color: #333;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 40px 30px;
+        background-color: white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        border-radius: 4px;
+    }}
+    .gdocs-text p {{
+        margin-bottom: 1.2em;
+        text-align: justify;
+        font-size: {st.session_state.font_size}px;
+    }}
+    .gdocs-title {{
+        font-family: 'Arial', sans-serif;
+        font-size: {st.session_state.font_size + 10}px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 30px;
+        text-align: center;
+    }}
+    {auto_scroll_css}
+    </style>
+    """, unsafe_allow_html=True)
+    
+    paragraphs = selected_story['isi'].split('\n\n')
+    formatted_text = ""
+    for para in paragraphs:
+        if para.strip():
+            formatted_text += f"<p>{para}</p>"
+    
+    st.markdown(f'<div class="gdocs-title">{selected_story["judul"]}</div>', unsafe_allow_html=True)
+    
+    if st.session_state.auto_scroll:
+        st.markdown(f"""
+        <div class="scroll-container">
+            <div class="gdocs-text">{formatted_text}</div>
+        </div>
+        """, unsafe_allow_html=True)
     else:
-        st.session_state.timer_expired = True
-        progress_bar.progress(0)
-        timer_placeholder.markdown("<h3 style='text-align:center; color:red;'>⏰ Waktu presentasi habis!</h3>", unsafe_allow_html=True)
-        
-        # Show continue button only when time is up
+        st.markdown(f'<div class="gdocs-text">{formatted_text}</div>', unsafe_allow_html=True)
+    
+    if time_left <= 0 and not st.session_state.reading_time_up:
+        st.session_state.reading_time_up = True
+        st.rerun()
+    
+    if st.session_state.reading_time_up:
         col_btn = st.columns([1, 2, 1])
         with col_btn[1]:
-            if st.button("➡️ Lanjut ke Tugas Aritmatika", key="finish_presentation"):
-                st.session_state.page = "arithmetic_task"
+            if st.button("➡️ Lanjut ke Istirahat", key="next_button"):
+                st.session_state.page = "rest_timer"
                 st.rerun()
+    else:
+        time.sleep(0.1)
+        st.rerun()
 
 def dass21_page():
     st.title(f"📋 Kuesioner DASS-21 ({st.session_state.current_condition})")
