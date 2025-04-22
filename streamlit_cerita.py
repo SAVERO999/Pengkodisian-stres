@@ -431,7 +431,7 @@ def rest_timer_page():
     # Calculate remaining time
     current_time = time.time()
     elapsed = current_time - st.session_state.rest_start_time
-    time_left = max(0, 3 - elapsed)  
+    time_left = max(0, 60 - elapsed)  
     
     st.markdown("""
     <div class='medium-font'>
@@ -472,7 +472,7 @@ def rest_timer_page():
         with button_container.container():
             col_btn = st.columns([1, 2, 1])
             with col_btn[1]:
-                if st.button("➡️ Lanjut ke Tahap Berikutnya", key="next_after_rest"):
+                if st.button("➡️ Lanjut ke Kuesioner", key="next_after_rest"):
                     # Clear timer state
                     keys_to_clear = ['rest_start_time', 'timer_finished']
                     for key in keys_to_clear:
@@ -522,8 +522,8 @@ def tahap2_page():
     st.markdown("""
     <div class='medium-font'>
     <b>Instruksi:</b><br>
-    1. Anda akan mempersiapkan presentasi tentang topik netral selama 5 menit<br>
-    2. Presentasikan di depan evaluator<br>
+    1. Anda akan mempersiapkan presentasi tentang topik netral selama 3 menit<br>
+    2. Presentasikan di depan evaluator selama 5 menit<br>
     3. Dilanjutkan dengan tugas aritmatika sederhana
     </div>
     """, unsafe_allow_html=True)
@@ -543,8 +543,8 @@ def tahap3_page():
     st.markdown("""
     <div class='medium-font'>
     <b>Instruksi:</b><br>
-    1. Anda akan mempersiapkan presentasi tentang "kelemahan diri" selama 5 menit<br>
-    2. Presentasikan di depan evaluator<br>
+    1. Anda akan mempersiapkan presentasi tentang "kelemahan diri" selama 3 menit<br>
+    2. Presentasikan di depan evaluator selama 5 menit<br>
     3. Dilanjutkan dengan tugas aritmatika sulit (pengurangan serial 13 dari 1022)
     </div>
     """, unsafe_allow_html=True)
@@ -994,7 +994,7 @@ def cerita_setup_page():
     
     col_btn = st.columns([1, 2, 1])
     with col_btn[1]:
-        if st.button("🔀 Acak Cerita dan Mulai Membaca", key="start_reading"):
+        if st.button("🔀 Mulai Membaca", key="start_reading"):
             if st.session_state.stories:
                 st.session_state.selected_story = random.choice(st.session_state.stories)
                 st.session_state.page = "cerita"
@@ -1008,7 +1008,7 @@ def presentation_prep_page():
         st.session_state.prep_start_time = time.time()
     
     elapsed = time.time() - st.session_state.prep_start_time
-    time_left = max(0, 3 - elapsed)
+    time_left = max(0, 300 - elapsed)
 
     st.markdown("### Topik Presentasi Anda:")
     st.markdown(f"<div style='padding:10px; background-color:#cce5ff; border-radius:5px; font-size:24px; font-weight:bold;'>{st.session_state.selected_topic}</div>", unsafe_allow_html=True)
@@ -1049,7 +1049,7 @@ def presentation_page():
     
     # Calculate remaining time
     elapsed = time.time() - st.session_state.presentation_start_time
-    time_left = max(0, 3 - elapsed)  # 5 menit = 300 detik
+    time_left = max(0, 300 - elapsed)  # 5 menit = 300 detik
     
     st.markdown("### Topik Presentasi Anda:")
     st.markdown(f"<div style='padding:10px; background-color:#cce5ff; border-radius:5px; font-size:24px; font-weight:bold;'>{st.session_state.selected_topic}</div>", unsafe_allow_html=True)
@@ -1097,7 +1097,7 @@ def arithmetic_task_page():
     <b>Instruksi:</b><br>
     1. Selesaikan soal pengurangan/pembagian berikut<br>
     2. Jawab dengan benar untuk melanjutkan ke soal berikutnya<br>
-    3. Total ada 30 soal yang harus diselesaikan
+    3. Total ada 10 soal yang harus diselesaikan
     </div>
     """, unsafe_allow_html=True)
     
@@ -1109,7 +1109,7 @@ def arithmetic_task_page():
         st.session_state.task_completed = False
         
         # Meningkatkan jumlah soal menjadi 30 dengan angka ratusan (3 digit)
-        for _ in range(30):
+        for _ in range(10):
             if random.random() > 0.5:
                 # Pengurangan dengan angka 3 digit (ratusan)
                 a = random.randint(500, 999)  # 3 digit (ratusan)
@@ -1140,7 +1140,7 @@ def arithmetic_task_page():
     if not st.session_state.task_completed:
         problem = st.session_state.arithmetic_problems[st.session_state.current_problem]
         
-        st.markdown(f"### Soal {st.session_state.current_problem + 1}/30")
+        st.markdown(f"### Soal {st.session_state.current_problem + 1}/10")
         st.markdown(f"<div class='big-font'>{problem['question']}</div>", unsafe_allow_html=True)
         
         # Gunakan key unik untuk setiap soal
@@ -1168,13 +1168,13 @@ def arithmetic_task_page():
                 if is_correct:
                     st.session_state.current_problem += 1
                     
-                    if st.session_state.current_problem >= 30:  # Diubah dari 5 menjadi 30
+                    if st.session_state.current_problem >= 10:  # Diubah dari 5 menjadi 10
                         st.session_state.task_completed = True
                     st.rerun()  # Refresh untuk soal baru
                 else:
                     st.rerun()
         
-        st.progress((st.session_state.current_problem)/30)  # Diubah dari 5 menjadi 30
+        st.progress((st.session_state.current_problem)/10)  # Diubah dari 5 menjadi 110
     else:
         st.success("🎉 Anda telah menyelesaikan semua soal aritmatika!")
         
@@ -1200,7 +1200,7 @@ def cerita_page():
         st.session_state.reading_time_up = False
     
     elapsed = time.time() - st.session_state.reading_start_time
-    time_left = max(0, 3 - elapsed)
+    time_left = max(0, 300 - elapsed)
     
     selected_story = st.session_state.selected_story
     
