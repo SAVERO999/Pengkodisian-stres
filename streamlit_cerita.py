@@ -548,8 +548,8 @@ def tahap2_page():
     st.markdown("""
     <div class='medium-font'>
     <b>Instruksi:</b><br>
-    1. Anda akan mempersiapkan presentasi tentang topik netral selama 5 menit<br>
-    2. Presentasikan di depan evaluator<br>
+    1. Anda akan mempersiapkan presentasi tentang topik netral selama 3 menit<br>
+    2. Presentasikan di depan evaluator selama 5 menit<br>
     3. Dilanjutkan dengan tugas aritmatika sederhana
     </div>
     """, unsafe_allow_html=True)
@@ -569,8 +569,8 @@ def tahap3_page():
     st.markdown("""
     <div class='medium-font'>
     <b>Instruksi:</b><br>
-    1. Anda akan mempersiapkan presentasi tentang "kelemahan diri" selama 5 menit<br>
-    2. Presentasikan di depan evaluator<br>
+    1. Anda akan mempersiapkan presentasi tentang "kelemahan diri" selama 3 menit<br>
+    2. Presentasikan di depan evaluator selama 5 menit<br>
     3. Dilanjutkan dengan tugas aritmatika sulit (pengurangan serial 13 dari 1022)
     </div>
     """, unsafe_allow_html=True)
@@ -829,7 +829,7 @@ def high_prep_page():
         st.session_state.high_prep_start_time = time.time()
     
     elapsed = time.time() - st.session_state.high_prep_start_time
-    prep_time_left = max(0, 300 - elapsed)
+    prep_time_left = max(0, 180 - elapsed)
     
     if 'high_presentation_topic' not in st.session_state:
         st.session_state.high_presentation_topic = random.choice(["Kelemahan Anda"])
@@ -1034,7 +1034,7 @@ def presentation_prep_page():
         st.session_state.prep_start_time = time.time()
     
     elapsed = time.time() - st.session_state.prep_start_time
-    time_left = max(0, 300 - elapsed)
+    time_left = max(0, 180 - elapsed)
 
     st.markdown("### Topik Presentasi Anda:")
     st.markdown(f"<div style='padding:10px; background-color:#cce5ff; border-radius:5px; font-size:24px; font-weight:bold;'>{st.session_state.selected_topic}</div>", unsafe_allow_html=True)
@@ -1073,12 +1073,33 @@ def presentation_page():
     st.markdown("### Catatan Persiapan Anda:")
     st.write(st.session_state.presentation_notes)
     
-    col_btn = st.columns([1, 2, 1])
-    with col_btn[1]:
-        if st.button("➡️ Lanjut ke Tugas Aritmatika", key="finish_presentation"):
-            st.session_state.page = "arithmetic_task"
-            st.rerun()
-
+    # Timer section
+    st.markdown("---")
+    st.markdown("### ⏳ Timer Presentasi (5 menit)")
+    
+    if 'start_time' not in st.session_state:
+        st.session_state.start_time = time.time()
+        st.session_state.timer_expired = False
+    
+    current_time = time.time()
+    elapsed_time = current_time - st.session_state.start_time
+    remaining_time = max(300 - elapsed_time, 0)  # 5 minutes = 300 seconds
+    
+    if remaining_time > 0 and not st.session_state.timer_expired:
+        minutes, seconds = divmod(int(remaining_time), 60)
+        timer_text = f"⏱️ Waktu tersisa: {minutes:02d}:{seconds:02d}"
+        st.progress(remaining_time / 300)
+        st.markdown(f"<h3 style='text-align:center; color:red;'>{timer_text}</h3>", unsafe_allow_html=True)
+    else:
+        st.session_state.timer_expired = True
+        st.markdown("<h3 style='text-align:center; color:red;'>⏰ Waktu presentasi habis!</h3>", unsafe_allow_html=True)
+        
+        # Tombol hanya muncul ketika timer habis
+        col_btn = st.columns([1, 2, 1])
+        with col_btn[1]:
+            if st.button("➡️ Lanjut ke Tugas Aritmatika", key="finish_presentation"):
+                st.session_state.page = "arithmetic_task"
+                st.rerun()
 def arithmetic_task_page():
     st.title("🧮 Tugas Aritmatika - Tahap 2")
     st.markdown("---")
