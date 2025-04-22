@@ -1320,7 +1320,24 @@ def dass21_page():
             if None in st.session_state.dass21_responses.values():
                 st.error("Mohon jawab semua pertanyaan!")
             else:
-                st.session_state.page = "acute_stress"
+                # Hanya di Tahap 1 kita lanjut ke acute stress
+                if st.session_state.current_condition == "Tahap 1":
+                    st.session_state.page = "acute_stress"
+                else:
+                    # Untuk kondisi lain, langsung simpan dan lanjut ke tahap berikutnya
+                    save_session_results(st.session_state.current_condition)
+                    
+                    conditions = ["Tahap 1", "Tahap 2", "Tahap 3", "Tahap 4"]
+                    current_index = conditions.index(st.session_state.current_condition)
+                    
+                    if current_index < len(conditions) - 1:
+                        next_condition = conditions[current_index + 1]
+                        st.session_state.page = next_condition.lower().replace(" ", "")
+                    else:
+                        st.session_state.page = "hasil"
+                    
+                    del st.session_state.dass21_responses
+                
                 # Scroll to top
                 components.html(
                     """
@@ -1331,7 +1348,7 @@ def dass21_page():
                     height=0
                 )
                 st.rerun()
-
+            
 def acute_stress_page():
     st.title(f"📋 Kuesioner Stres Akut ({st.session_state.current_condition})")
     st.markdown("---")
