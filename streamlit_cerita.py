@@ -673,7 +673,7 @@ def music_session_page():
         st.session_state.music_start_time = time.time()
     
     # Audio player dengan musik The Blue Danube
-    audio_file = open('the-blue-danube-op-314-johann-strauss-ii-arranged-for-solo-piano-212208 (mp3cut.net)mp3', 'rb')
+    audio_file = open('the-blue-danube-op-314-johann-strauss-ii-arranged-for-solo-piano-212208 (mp3cut.net).mp3', 'rb')
     audio_bytes = audio_file.read()
     
     st.audio(audio_bytes, format='audio/mp3', start_time=0)
