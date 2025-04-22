@@ -1042,17 +1042,52 @@ def presentation_page():
     st.title("🎤 Presentasi - Tahap 2")
     st.markdown("---")
     
+    # Initialize timer state
+    if 'presentation_start_time' not in st.session_state:
+        st.session_state.presentation_start_time = time.time()
+        st.session_state.presentation_time_up = False
+    
+    # Calculate remaining time
+    elapsed = time.time() - st.session_state.presentation_start_time
+    time_left = max(0, 300 - elapsed)  # 5 menit = 300 detik
+    
     st.markdown("### Topik Presentasi Anda:")
     st.markdown(f"<div style='padding:10px; background-color:#cce5ff; border-radius:5px; font-size:24px; font-weight:bold;'>{st.session_state.selected_topic}</div>", unsafe_allow_html=True)
+    
+    # Display remaining time
+    minutes = int(time_left // 60)
+    seconds = int(time_left % 60)
+    st.markdown(f"### Waktu Presentasi Tersisa: {minutes:02d}:{seconds:02d}")
+    
+    # Progress bar
+    st.progress(min(elapsed/300, 1.0))
+    
     st.markdown("### Catatan Persiapan Anda:")
     st.write(st.session_state.presentation_notes)
     
-    col_btn = st.columns([1, 2, 1])
-    with col_btn[1]:
-        if st.button("➡️ Lanjut ke Tugas Aritmatika", key="finish_presentation"):
-            st.session_state.page = "arithmetic_task"
-            st.rerun()
-
+    # Check if time is up
+    if time_left <= 0 and not st.session_state.presentation_time_up:
+        st.session_state.presentation_time_up = True
+        st.rerun()
+    
+    # Only show continue button after time is up
+    if st.session_state.presentation_time_up:
+        col_btn = st.columns([1, 2, 1])
+        with col_btn[1]:
+            if st.button("➡️ Lanjut ke Tugas Aritmatika", key="finish_presentation"):
+                # Clear timer state
+                keys_to_clear = ['presentation_start_time', 'presentation_time_up']
+                for key in keys_to_clear:
+                    if key in st.session_state:
+                        del st.session_state[key]
+                
+                st.session_state.page = "arithmetic_task"
+                st.rerun()
+    else:
+        # Auto-refresh every second to update timer
+        time.sleep(1)
+        st.rerun()
+        
 def arithmetic_task_page():
     st.title("🧮 Tugas Aritmatika - Tahap 2")
     st.markdown("---")
