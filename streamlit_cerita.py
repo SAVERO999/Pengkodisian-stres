@@ -714,8 +714,8 @@ def feeling_evaluation_page():
         <div class='medium-font'>
         <b>Instruksi Persiapan (1 menit):</b><br>
         1. Pikirkan perubahan emosi yang Anda rasakan<br>
-        2. Presentasikan secara jelas dan terstruktur
-        3. Siapkan poin-poin utama yang ingin disampaikanbr>
+        2. Siapkan poin-poin utama yang ingin disampaikan<br> 
+        3. Presentasikan secara jelas dan terstruktur<br>
         4. Anda akan presentasikan selama 3 menit
         </div>
         """, unsafe_allow_html=True)
