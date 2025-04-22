@@ -1200,7 +1200,7 @@ def cerita_page():
         st.session_state.reading_time_up = False
     
     elapsed = time.time() - st.session_state.reading_start_time
-    time_left = max(0, 300 - elapsed)
+    time_left = max(0, 3 - elapsed)
     
     selected_story = st.session_state.selected_story
     
@@ -1302,14 +1302,13 @@ def cerita_page():
     
     if time_left <= 0 and not st.session_state.reading_time_up:
         st.session_state.reading_time_up = True
+        st.session_state.page = "rest_timer"  # Langsung pindah ke halaman istirahat
         st.rerun()
     
+    # Hapus bagian tombol "Lanjut ke Istirahat" karena sekarang otomatis
     if st.session_state.reading_time_up:
-        col_btn = st.columns([1, 2, 1])
-        with col_btn[1]:
-            if st.button("➡️ Lanjut ke Istirahat", key="next_button"):
-                st.session_state.page = "rest_timer"
-                st.rerun()
+        time.sleep(0.1)  # Memberi waktu kecil untuk memastikan transisi
+        st.rerun()
     else:
         time.sleep(0.1)
         st.rerun()
