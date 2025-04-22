@@ -735,16 +735,10 @@ def feeling_evaluation_page():
         
         # Only allow continue after time is up
         if prep_time_left <= 0:
-            st.session_state.show_continue_button = True
-        
-        if st.session_state.show_continue_button:
-            col_btn = st.columns([1, 2, 1])
-            with col_btn[1]:
-                if st.button("🎤 Lanjut ke Presentasi", key="continue_to_presentation"):
-                    st.session_state.feeling_stage = "presentation"
-                    st.session_state.presentation_start_time = time.time()
-                    st.session_state.show_continue_button = False
-                    st.rerun()
+            # Transisi otomatis ke tahap presentasi
+            st.session_state.feeling_stage = "presentation"
+            st.session_state.presentation_start_time = time.time()
+            st.rerun()
         else:
             time.sleep(0.1)
             st.rerun()
@@ -764,33 +758,28 @@ def feeling_evaluation_page():
         
         # Only allow continue after time is up
         if presentation_time_left <= 0:
-            st.session_state.feeling_completed = True
-            st.session_state.show_continue_button = True
-        
-        if st.session_state.show_continue_button:
-            col_btn = st.columns([1, 2, 1])
-            with col_btn[1]:
-                if st.button("➡️ Lanjut ke Istirahat", key="proceed_to_rest"):
-                    # Save response
-                    if 'relaxation_responses' not in st.session_state:
-                        st.session_state.relaxation_responses = []
-                    st.session_state.relaxation_responses.append({
-                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        "response": st.session_state.feeling_response
-                    })
-                    
-                    # Clear state
-                    keys_to_clear = [
-                        'feeling_stage', 'feeling_response', 
-                        'prep_start_time', 'presentation_start_time',
-                        'feeling_completed', 'show_continue_button'
-                    ]
-                    for key in keys_to_clear:
-                        if key in st.session_state:
-                            del st.session_state[key]
-                    
-                    st.session_state.page = "rest_timer"
-                    st.rerun()
+            # Save response
+            if 'relaxation_responses' not in st.session_state:
+                st.session_state.relaxation_responses = []
+            st.session_state.relaxation_responses.append({
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "response": st.session_state.feeling_response
+            })
+            
+            # Clear state
+            keys_to_clear = [
+                'feeling_stage', 'feeling_response', 
+                'prep_start_time', 'presentation_start_time',
+                'feeling_completed', 'show_continue_button'
+            ]
+            for key in keys_to_clear:
+                if key in st.session_state:
+                    del st.session_state[key]
+            
+            # Langsung pindah ke halaman istirahat tanpa tombol
+            st.session_state.page = "rest_timer"
+            time.sleep(0.5)  # Berikan sedikit waktu
+            st.rerun()
         else:
             time.sleep(0.1)
             st.rerun()
@@ -901,16 +890,15 @@ def high_arithmetic_page():
     minutes, seconds = divmod(int(time_left), 60)
     st.markdown(f"### Waktu Tersisa: {minutes:02d}:{seconds:02d}")
     
-    progress = min(elapsed / 3, 1.0)
+    progress = min(elapsed / 300, 1.0)  # Perbaikan untuk progress bar
     st.progress(progress)
     
     if time_left <= 0:
         st.success("Waktu tugas aritmatika telah habis!")
-        col_btn = st.columns([1, 2, 1])
-        with col_btn[1]:
-            if st.button("➡️ Lanjut ke Istirahat", key="finish_high_arithmetic"):
-                st.session_state.page = "rest_timer"
-                st.rerun()
+        # Langsung pindah ke halaman istirahat tanpa tombol
+        st.session_state.page = "rest_timer"
+        time.sleep(0.5)  # Berikan sedikit waktu untuk pengguna membaca pesan sukses
+        st.rerun()
     else:
         time.sleep(1)
         st.rerun()
@@ -1108,7 +1096,7 @@ def arithmetic_task_page():
         st.session_state.answers = []
         st.session_state.task_completed = False
         
-        # Meningkatkan jumlah soal menjadi 30 dengan angka ratusan (3 digit)
+        # Meningkatkan jumlah soal menjadi 10 dengan angka ratusan (3 digit)
         for _ in range(10):
             if random.random() > 0.5:
                 # Pengurangan dengan angka 3 digit (ratusan)
@@ -1174,21 +1162,21 @@ def arithmetic_task_page():
                 else:
                     st.rerun()
         
-        st.progress((st.session_state.current_problem)/10)  # Diubah dari 5 menjadi 110
+        st.progress((st.session_state.current_problem)/10)  # Diubah dari 5 menjadi 10
     else:
         st.success("🎉 Anda telah menyelesaikan semua soal aritmatika!")
         
-        col_btn = st.columns([1, 2, 1])
-        with col_btn[1]:
-            if st.button("➡️ Lanjut ke Istirahat", key="proceed_to_rest"):
-                # Bersihkan state aritmatika
-                keys_to_clear = ['arithmetic_problems', 'current_problem', 
-                               'answers', 'task_completed']
-                for key in keys_to_clear:
-                    if key in st.session_state:
-                        del st.session_state[key]
-                st.session_state.page = "rest_timer"
-                st.rerun()
+        # Bersihkan state aritmatika
+        keys_to_clear = ['arithmetic_problems', 'current_problem', 
+                       'answers', 'task_completed']
+        for key in keys_to_clear:
+            if key in st.session_state:
+                del st.session_state[key]
+        
+        # Langsung pindah ke halaman istirahat tanpa tombol
+        st.session_state.page = "rest_timer"
+        time.sleep(0.5)  # Berikan sedikit waktu untuk pengguna membaca pesan sukses
+        st.rerun()
 
 def cerita_page():
     if st.button("⬅️ Kembali ke Pengaturan", key="back_button"):
