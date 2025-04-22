@@ -891,6 +891,54 @@ def high_presentation_page():
     else:
         time.sleep(0.1)
         st.rerun()
+def high_arithmetic_page():
+    if 'show_arithmetic_instructions' not in st.session_state:
+        st.session_state.show_arithmetic_instructions = True
+    
+    if st.session_state.show_arithmetic_instructions:
+        st.title("🧮 Instruksi Tugas Aritmatika - Tahap 3")
+        st.markdown("---")
+        
+        st.markdown("""
+        <div class='medium-font'>
+        <b>Instruksi:</b><br>
+        1. Hitung pengurangan serial mulai dari 1022 dengan pengurangan 13<br>
+        2. Anda memiliki waktu 5 menit<br>
+        3. Jika salah, Anda harus memulai kembali dari 1022
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        col_btn = st.columns([1, 2, 1])
+        with col_btn[1]:
+            if st.button("▶️ Mulai Tugas", key="start_arithmetic"):
+                st.session_state.show_arithmetic_instructions = False
+                st.session_state.arithmetic_start_time = time.time()
+                st.rerun()
+        return
+    
+    st.title("⏱️ Tugas Aritmatika - Tahap 3")
+    st.markdown("---")
+    
+    elapsed = time.time() - st.session_state.arithmetic_start_time
+    time_left = max(0, 300 - elapsed)
+    
+    minutes, seconds = divmod(int(time_left), 60)
+    st.markdown(f"### Waktu Tersisa: {minutes:02d}:{seconds:02d}")
+    
+    progress = min(elapsed / 3, 1.0)
+    st.progress(progress)
+    
+    if time_left <= 0:
+        st.success("Waktu tugas aritmatika telah habis!")
+        col_btn = st.columns([1, 2, 1])
+        with col_btn[1]:
+            if st.button("➡️ Lanjut ke Istirahat", key="finish_high_arithmetic"):
+                st.session_state.page = "rest_timer"
+                st.rerun()
+    else:
+        time.sleep(1)
+        st.rerun()
 
 def cerita_setup_page():
     st.title(f"⚙️ Pengaturan - {st.session_state.current_condition}")
