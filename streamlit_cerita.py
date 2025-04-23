@@ -1074,15 +1074,18 @@ def arithmetic_task_page():
     <div class='medium-font'>
     <b>Instruksi:</b><br>
     1. Selesaikan soal pengurangan/pembagian berikut<br>
-    2. Jawab dengan benar untuk melanjutkan ke soal berikutnya<br>
-    3. Total ada 10 soal yang harus diselesaikan<br>
-    4. Anda memiliki waktu 5 menit untuk menyelesaikan semua soal
+    2. Jawab dengan benar untuk mendapatkan soal berikutnya<br>
+    3. Anda memiliki waktu 5 menit untuk mengerjakan soal-soal ini
     </div>
     """, unsafe_allow_html=True)
     
     # Initialize timer
     if 'arithmetic_start_time' not in st.session_state:
         st.session_state.arithmetic_start_time = time.time()
+        st.session_state.arithmetic_problems = []
+        st.session_state.current_problem = None
+        st.session_state.answers = []
+        st.session_state.correct_count = 0
     
     elapsed = time.time() - st.session_state.arithmetic_start_time
     time_left = max(0, 300 - elapsed)  # 5 menit = 300 detik
@@ -1095,92 +1098,77 @@ def arithmetic_task_page():
     # Progress bar for time
     st.progress(min(elapsed/300, 1.0))
     
-    # Inisialisasi masalah aritmatika
-    if 'arithmetic_problems' not in st.session_state:
-        st.session_state.arithmetic_problems = []
-        st.session_state.current_problem = 0
-        st.session_state.answers = []
-        st.session_state.task_completed = False
-        
-        for _ in range(10):
-            if random.random() > 0.5:
-                a = random.randint(500, 999)
-                b = random.randint(100, 499)
-                st.session_state.arithmetic_problems.append({
-                    'type': 'pengurangan',
-                    'question': f"{a} - {b} = ?",
-                    'answer': a - b
-                })
-            else:
+    # Generate new problem if needed
+    if st.session_state.current_problem is None:
+        if random.random() > 0.5:
+            a = random.randint(500, 999)
+            b = random.randint(100, 499)
+            st.session_state.current_problem = {
+                'type': 'pengurangan',
+                'question': f"{a} - {b} = ?",
+                'answer': a - b
+            }
+        else:
+            b = random.randint(10, 99)
+            answer = random.randint(10, 99)
+            a = b * answer
+            
+            while a < 100 or a > 999:
                 b = random.randint(10, 99)
                 answer = random.randint(10, 99)
                 a = b * answer
-                
-                while a < 100 or a > 999:
-                    b = random.randint(10, 99)
-                    answer = random.randint(10, 99)
-                    a = b * answer
-                
-                st.session_state.arithmetic_problems.append({
-                    'type': 'pembagian',
-                    'question': f"{a} ÷ {b} = ?",
-                    'answer': answer
-                })
-
+            
+            st.session_state.current_problem = {
+                'type': 'pembagian',
+                'question': f"{a} ÷ {b} = ?",
+                'answer': answer
+            }
+    
     # Check if time is up
-    if time_left <= 0 and not st.session_state.task_completed:
+    if time_left <= 0:
         st.warning("Waktu telah habis! Anda akan dialihkan ke halaman berikutnya.")
         time.sleep(2)  # Tampilkan pesan selama 2 detik
         st.session_state.page = "rest_timer"
         st.rerun()
     
-    if not st.session_state.task_completed:
-        problem = st.session_state.arithmetic_problems[st.session_state.current_problem]
-        
-        st.markdown(f"### Soal {st.session_state.current_problem + 1}/10")
-        st.markdown(f"<div class='big-font'>{problem['question']}</div>", unsafe_allow_html=True)
-        
-        answer_key = f"answer_{st.session_state.current_problem}"
-        user_answer = st.number_input(
-            "Jawaban Anda:", 
-            key=answer_key,
-            step=1,
-            value=None
-        )
-        
-        if st.button("✅ Submit Jawaban", key=f"submit_{st.session_state.current_problem}"):
-            if user_answer is None:
-                st.error("Mohon masukkan jawaban!")
+    # Display current problem
+    problem = st.session_state.current_problem
+    st.markdown(f"### Soal:")
+    st.markdown(f"<div class='big-font'>{problem['question']}</div>", unsafe_allow_html=True)
+    
+    user_answer = st.number_input(
+        "Jawaban Anda:", 
+        key=f"answer_{elapsed}",
+        step=1,
+        value=None
+    )
+    
+    if st.button("✅ Submit Jawaban", key=f"submit_{elapsed}"):
+        if user_answer is None:
+            st.error("Mohon masukkan jawaban!")
+        else:
+            is_correct = (user_answer == problem['answer'])
+            
+            st.session_state.answers.append({
+                'problem': problem['question'],
+                'user_answer': user_answer,
+                'is_correct': is_correct,
+                'timestamp': datetime.now().strftime("%H:%M:%S")
+            })
+            
+            if is_correct:
+                st.session_state.correct_count += 1
+                st.success("Jawaban benar! Soal berikutnya...")
+                time.sleep(1)
+                st.session_state.current_problem = None  # Trigger new problem
             else:
-                is_correct = (user_answer == problem['answer'])
-                
-                st.session_state.answers.append({
-                    'problem': problem['question'],
-                    'user_answer': user_answer,
-                    'is_correct': is_correct,
-                    'timestamp': datetime.now().strftime("%H:%M:%S")
-                })
-                
-                if is_correct:
-                    st.session_state.current_problem += 1
-                    
-                    if st.session_state.current_problem >= 10:
-                        st.session_state.task_completed = True
-                        st.success("🎉 Anda telah menyelesaikan semua soal aritmatika!")
-                        time.sleep(2)  # Tampilkan pesan sukses selama 2 detik
-                        st.session_state.page = "rest_timer"
-                    st.rerun()
-                else:
-                    st.error("Jawaban salah, silakan coba lagi!")
-                    st.rerun()
-        
-        # Progress bar for questions
-        st.progress((st.session_state.current_problem)/10)
-    else:
-        # This part is actually redundant now as we already redirect when task is completed
-        st.session_state.page = "rest_timer"
-        st.rerun()
-        
+                st.error("Jawaban salah, silakan coba lagi!")
+            
+            st.rerun()
+    
+    # Display stats
+    st.markdown(f"**Jawaban benar:** {st.session_state.correct_count}")
+    
 def cerita_page():
     if st.button("⬅️ Kembali ke Pengaturan", key="back_button"):
         st.session_state.page = "cerita_setup"
