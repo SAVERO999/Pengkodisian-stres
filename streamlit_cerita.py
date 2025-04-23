@@ -885,7 +885,7 @@ def high_arithmetic_page():
     st.markdown("---")
     
     elapsed = time.time() - st.session_state.arithmetic_start_time
-    time_left = max(0, 300 - elapsed)
+    time_left = max(0, 3 - elapsed)
     
     minutes, seconds = divmod(int(time_left), 60)
     st.markdown(f"### Waktu Tersisa: {minutes:02d}:{seconds:02d}")
