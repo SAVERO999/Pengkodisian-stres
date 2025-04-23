@@ -529,7 +529,7 @@ def tahap2_page():
     <b>Instruksi:</b><br>
     1. Anda akan mempersiapkan presentasi tentang topik netral selama 3 menit<br>
     2. Presentasikan di depan evaluator selama 5 menit<br>
-    3. Dilanjutkan dengan tugas aritmatika sederhana
+    3. Dilanjutkan dengan tugas aritmatika selama 5 menit
     </div>
     """, unsafe_allow_html=True)
     
@@ -855,6 +855,7 @@ def high_presentation_page():
     
     time.sleep(0.1)
     st.rerun()
+    
 def high_arithmetic_page():
     if 'show_arithmetic_instructions' not in st.session_state:
         st.session_state.show_arithmetic_instructions = True
@@ -901,6 +902,7 @@ def high_arithmetic_page():
     else:
         time.sleep(0.1)
         st.rerun()
+        
 def cerita_setup_page():
     st.title(f"⚙️ Pengaturan - {st.session_state.current_condition}")
     st.markdown("---")
@@ -1189,7 +1191,7 @@ def cerita_page():
         st.session_state.reading_time_up = False
     
     elapsed = time.time() - st.session_state.reading_start_time
-    time_left = max(0, 300 - elapsed)
+    time_left = max(0, 3 - elapsed)
     
     selected_story = st.session_state.selected_story
     
