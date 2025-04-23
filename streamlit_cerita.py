@@ -1075,9 +1075,25 @@ def arithmetic_task_page():
     <b>Instruksi:</b><br>
     1. Selesaikan soal pengurangan/pembagian berikut<br>
     2. Jawab dengan benar untuk melanjutkan ke soal berikutnya<br>
-    3. Total ada 10 soal yang harus diselesaikan
+    3. Total ada 10 soal yang harus diselesaikan<br>
+    4. Anda memiliki waktu 5 menit untuk menyelesaikan semua soal
     </div>
     """, unsafe_allow_html=True)
+    
+    # Initialize timer
+    if 'arithmetic_start_time' not in st.session_state:
+        st.session_state.arithmetic_start_time = time.time()
+    
+    elapsed = time.time() - st.session_state.arithmetic_start_time
+    time_left = max(0, 300 - elapsed)  # 5 menit = 300 detik
+    
+    # Display timer
+    minutes = int(time_left // 60)
+    seconds = int(time_left % 60)
+    st.markdown(f"### Waktu Tersisa: {minutes:02d}:{seconds:02d}")
+    
+    # Progress bar for time
+    st.progress(min(elapsed/300, 1.0))
     
     # Inisialisasi masalah aritmatika
     if 'arithmetic_problems' not in st.session_state:
@@ -1111,6 +1127,13 @@ def arithmetic_task_page():
                     'answer': answer
                 })
 
+    # Check if time is up
+    if time_left <= 0 and not st.session_state.task_completed:
+        st.warning("Waktu telah habis! Anda akan dialihkan ke halaman berikutnya.")
+        time.sleep(2)  # Tampilkan pesan selama 2 detik
+        st.session_state.page = "rest_timer"
+        st.rerun()
+    
     if not st.session_state.task_completed:
         problem = st.session_state.arithmetic_problems[st.session_state.current_problem]
         
@@ -1143,16 +1166,19 @@ def arithmetic_task_page():
                     
                     if st.session_state.current_problem >= 10:
                         st.session_state.task_completed = True
-                        st.session_state.page = "rest_timer"  # Langsung ke istirahat
+                        st.success("🎉 Anda telah menyelesaikan semua soal aritmatika!")
+                        time.sleep(2)  # Tampilkan pesan sukses selama 2 detik
+                        st.session_state.page = "rest_timer"
                     st.rerun()
                 else:
+                    st.error("Jawaban salah, silakan coba lagi!")
                     st.rerun()
         
+        # Progress bar for questions
         st.progress((st.session_state.current_problem)/10)
     else:
-        st.success("🎉 Anda telah menyelesaikan semua soal aritmatika!")
-        time.sleep(1)  # Tampilkan pesan sukses sebentar
-        st.session_state.page = "rest_timer"  # Langsung ke istirahat
+        # This part is actually redundant now as we already redirect when task is completed
+        st.session_state.page = "rest_timer"
         st.rerun()
         
 def cerita_page():
