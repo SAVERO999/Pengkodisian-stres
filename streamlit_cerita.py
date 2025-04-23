@@ -1079,24 +1079,28 @@ def arithmetic_task_page():
     </div>
     """, unsafe_allow_html=True)
     
-    # Initialize timer
+    # Initialize timer and problem state
     if 'arithmetic_start_time' not in st.session_state:
         st.session_state.arithmetic_start_time = time.time()
-        st.session_state.arithmetic_problems = []
         st.session_state.current_problem = None
         st.session_state.answers = []
         st.session_state.correct_count = 0
+        st.session_state.last_update = time.time()
     
-    elapsed = time.time() - st.session_state.arithmetic_start_time
+    # Calculate time left
+    current_time = time.time()
+    elapsed = current_time - st.session_state.arithmetic_start_time
     time_left = max(0, 300 - elapsed)  # 5 menit = 300 detik
     
-    # Display timer
+    # Display timer - menggunakan st.empty() untuk update dinamis
+    timer_display = st.empty()
+    progress_bar = st.empty()
+    
+    # Update timer display
     minutes = int(time_left // 60)
     seconds = int(time_left % 60)
-    st.markdown(f"### Waktu Tersisa: {minutes:02d}:{seconds:02d}")
-    
-    # Progress bar for time
-    st.progress(min(elapsed/300, 1.0))
+    timer_display.markdown(f"### Waktu Tersisa: {minutes:02d}:{seconds:02d}")
+    progress_bar.progress(min(elapsed/300, 1.0))
     
     # Generate new problem if needed
     if st.session_state.current_problem is None:
@@ -1124,13 +1128,6 @@ def arithmetic_task_page():
                 'answer': answer
             }
     
-    # Check if time is up
-    if time_left <= 0:
-        st.warning("Waktu telah habis! Anda akan dialihkan ke halaman berikutnya.")
-        time.sleep(2)  # Tampilkan pesan selama 2 detik
-        st.session_state.page = "rest_timer"
-        st.rerun()
-    
     # Display current problem
     problem = st.session_state.current_problem
     st.markdown(f"### Soal:")
@@ -1138,12 +1135,21 @@ def arithmetic_task_page():
     
     user_answer = st.number_input(
         "Jawaban Anda:", 
-        key=f"answer_{elapsed}",
+        key=f"answer_{time_left}",  # Gunakan time_left sebagai bagian dari key
         step=1,
         value=None
     )
     
-    if st.button("✅ Submit Jawaban", key=f"submit_{elapsed}"):
+    submit_button = st.button("✅ Submit Jawaban", key=f"submit_{time_left}")
+    
+    # Check if time is up
+    if time_left <= 0:
+        st.warning("Waktu telah habis! Anda akan dialihkan ke halaman berikutnya.")
+        time.sleep(2)
+        st.session_state.page = "rest_timer"
+        st.rerun()
+    
+    if submit_button:
         if user_answer is None:
             st.error("Mohon masukkan jawaban!")
         else:
@@ -1169,6 +1175,10 @@ def arithmetic_task_page():
     # Display stats
     st.markdown(f"**Jawaban benar:** {st.session_state.correct_count}")
     
+    # Auto-rerun untuk update timer
+    if current_time - st.session_state.last_update > 1:  # Update setiap 1 detik
+        st.session_state.last_update = current_time
+        st.rerun()
 def cerita_page():
     if st.button("⬅️ Kembali ke Pengaturan", key="back_button"):
         st.session_state.page = "cerita_setup"
