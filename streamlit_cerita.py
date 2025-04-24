@@ -431,7 +431,7 @@ def rest_timer_page():
     # Calculate remaining time
     current_time = time.time()
     elapsed = current_time - st.session_state.rest_start_time
-    time_left = max(0, 1 - elapsed)  
+    time_left = max(0, 3 - elapsed)  
     
     st.markdown("""
     <div class='medium-font'>
@@ -570,7 +570,7 @@ def tahap4_page():
     <div class='medium-font'>
     <b>Instruksi:</b><br>
     Anda akan melalui 3 sesi relaksasi:<br>
-    1. Progressive Muscle Relaxation (PMR)>
+    1. Progressive Muscle Relaxation (PMR)<br>
     2. Mendengarkan musik menenangkan<br>
     3. Evaluasi perasaan setelah relaksasi <br><br>
     Tekan tombol di bawah untuk memulai.
@@ -796,7 +796,7 @@ def high_prep_page():
         st.session_state.high_prep_start_time = time.time()
     
     elapsed = time.time() - st.session_state.high_prep_start_time
-    prep_time_left = max(0, 180 - elapsed)
+    prep_time_left = max(0, 1 - elapsed)
     
     if 'high_presentation_topic' not in st.session_state:
         st.session_state.high_presentation_topic = random.choice(["Kelemahan Anda"])
@@ -838,7 +838,7 @@ def high_presentation_page():
         st.session_state.high_presentation_start_time = time.time()
     
     elapsed = time.time() - st.session_state.high_presentation_start_time
-    presentation_time_left = max(0, 300 - elapsed)
+    presentation_time_left = max(0, 3 - elapsed)
     
     st.markdown("### Topik Presentasi Anda:")
     st.markdown(f"<div style='padding:10px; background-color:#ffcccb; border-radius:5px; color:#ff0000; font-size:24px; font-weight:bold;'>{st.session_state.high_presentation_topic}</div>", unsafe_allow_html=True)
@@ -882,11 +882,14 @@ def high_arithmetic_page():
                 st.rerun()
         return
     
+    # Bersihkan halaman sepenuhnya
+    st.empty()
+    
     st.title("⏱️ Tugas Aritmatika - Tahap 3")
     st.markdown("---")
     
     elapsed = time.time() - st.session_state.arithmetic_start_time
-    time_left = max(0, 300 - elapsed)
+    time_left = max(0, 300 - elapsed)  # 5 menit = 300 detik
     
     minutes, seconds = divmod(int(time_left), 60)
     st.markdown(f"### Waktu Tersisa: {minutes:02d}:{seconds:02d}")
@@ -895,14 +898,12 @@ def high_arithmetic_page():
     st.progress(progress)
     
     if time_left <= 0:
-        st.success("Waktu tugas aritmatika telah habis!")
-        time.sleep(1)  # Tampilkan pesan sukses sebentar
-        st.session_state.page = "rest_timer"  # Langsung ke istirahat
+        st.session_state.page = "rest_timer"
         st.rerun()
-    else:
-        time.sleep(0.1)
-        st.rerun()
-        
+    
+    time.sleep(0.1)
+    st.rerun()
+
 def cerita_setup_page():
     st.title(f"⚙️ Pengaturan - {st.session_state.current_condition}")
     st.markdown("---")
@@ -1077,7 +1078,7 @@ def arithmetic_task_page():
     <b>Instruksi:</b><br>
     1. Selesaikan soal pengurangan/pembagian berikut<br>
     2. Jawab dengan benar untuk melanjutkan ke soal berikutnya<br>
-    3. Anda memiliki waktu 5 menit untuk mengerjakan soal-soal
+    3. Anda memiliki waktu 5 menit untuk mengerjakan soal-soal<br>
     </div>
     """, unsafe_allow_html=True)
     
@@ -1088,7 +1089,7 @@ def arithmetic_task_page():
     
     # Hitung waktu tersisa
     elapsed = time.time() - st.session_state.arithmetic_start_time
-    time_left = max(0, 300 - elapsed)  # 5 menit = 300 detik
+    time_left = max(0, 5 - elapsed)  # 5 menit = 300 detik
     
     # Tampilkan waktu tersisa
     minutes = int(time_left // 60)
@@ -1104,7 +1105,7 @@ def arithmetic_task_page():
         st.session_state.current_problem = 0
         st.session_state.answers = []
         
-        # Generate soal terus menerus (tidak dibatasi 10 soal)
+        # Generate soal pertama
         if random.random() > 0.5:
             a = random.randint(500, 999)
             b = random.randint(100, 499)
@@ -1129,21 +1130,23 @@ def arithmetic_task_page():
 
     # Tampilkan soal saat ini
     problem = st.session_state.arithmetic_problems[st.session_state.current_problem]
-    st.markdown(f"### Soal:")
     st.markdown(f"<div class='big-font'>{problem['question']}</div>", unsafe_allow_html=True)
     
-    answer_key = f"answer_{st.session_state.current_problem}"
-    user_answer = st.number_input(
-        "Jawaban Anda:", 
-        key=answer_key,
-        step=1,
-        value=None
-    )
+    # Membuat form untuk input jawaban
+    with st.form(key='answer_form'):
+        answer_key = f"answer_{st.session_state.current_problem}"
+        user_answer = st.number_input(
+            "Jawaban Anda:", 
+            key=answer_key,
+            step=1,
+            value=None,
+            label_visibility="collapsed"
+        )
+        submitted = st.form_submit_button("Submit Jawaban")
     
-    if st.button("✅ Submit Jawaban", key=f"submit_{st.session_state.current_problem}"):
-        if user_answer is None:
-            st.error("Mohon masukkan jawaban!")
-        else:
+    # Handle jawaban yang di-submit
+    if submitted or user_answer is not None:
+        if user_answer is not None:  # Hanya proses jika ada jawaban
             is_correct = (user_answer == problem['answer'])
             
             st.session_state.answers.append({
@@ -1179,22 +1182,18 @@ def arithmetic_task_page():
                 
                 st.session_state.current_problem += 1
                 st.rerun()
-            else:
-                st.error("Jawaban salah, coba lagi!")
-                st.rerun()
+            # Jika salah, tidak melakukan apa-apa (tetap di soal yang sama)
     
     # Cek jika waktu habis
     if time_left <= 0 and not st.session_state.arithmetic_time_up:
         st.session_state.arithmetic_time_up = True
-        st.success("Waktu pengerjaan telah habis!")
-        time.sleep(1)  # Tampilkan pesan sukses sebentar
         st.session_state.page = "rest_timer"  # Langsung ke istirahat
         st.rerun()
     
     # Auto refresh untuk update timer
     time.sleep(0.1)
     st.rerun()
-    
+
 def cerita_page():
     if st.button("⬅️ Kembali ke Pengaturan", key="back_button"):
         st.session_state.page = "cerita_setup"
@@ -1552,4 +1551,3 @@ if __name__ == "__main__":
         st.error("Modul python-docx tidak terinstall. Silakan install dengan 'pip install python-docx'")
     
     main()
-
