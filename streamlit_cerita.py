@@ -1394,10 +1394,14 @@ def acute_stress_page():
     Silakan jawab pertanyaan berikut berdasarkan apa yang Anda rasakan SAAT INI
     </div>
     """, unsafe_allow_html=True)
-    
+
+    # ✅ Inisialisasi aman
+    if 'dass21_responses' not in st.session_state:
+        st.session_state.dass21_responses = {}
+
     if 'acute_stress_responses' not in st.session_state:
         st.session_state.acute_stress_responses = {}
-    
+
     for i, question in enumerate(ACUTE_STRESS_QUESTIONS):
         st.markdown(f"#### {i+1}. {question}")
         st.session_state.acute_stress_responses[i] = st.radio(
@@ -1408,33 +1412,30 @@ def acute_stress_page():
             label_visibility="collapsed"
         )
         st.markdown("---")
-    
+
     col_btn = st.columns([1, 2, 1])
     with col_btn[1]:
-        # Update button text based on whether it came from DASS-21 or not
-        button_text = "✅ Simpan Jawaban" if st.session_state.current_condition != "Tahap 1" else "✅ Simpan Jawaban"
-        
-        if st.button(button_text, key="save_acute"):
+        if st.button("✅ Simpan Jawaban", key="save_acute"):
             if None in st.session_state.acute_stress_responses.values():
                 st.error("Mohon jawab semua pertanyaan!")
             else:
                 save_session_results(st.session_state.current_condition)
-                
+
                 conditions = ["Tahap 1", "Tahap 2", "Tahap 3", "Tahap 4"]
                 current_index = conditions.index(st.session_state.current_condition)
-                
+
                 if current_index < len(conditions) - 1:
                     next_condition = conditions[current_index + 1]
                     st.session_state.page = next_condition.lower().replace(" ", "")
                 else:
                     st.session_state.page = "hasil"
-                
+
                 if 'dass21_responses' in st.session_state:
                     del st.session_state.dass21_responses
                 if 'acute_stress_responses' in st.session_state:
                     del st.session_state.acute_stress_responses
-                
-                # Scroll to top
+
+                # Scroll ke atas
                 components.html(
                     """
                     <script>
@@ -1444,6 +1445,7 @@ def acute_stress_page():
                     height=0
                 )
                 st.rerun()
+
 
 def hasil_page():
     st.title("📊 Hasil Semua Tahap")
