@@ -431,7 +431,7 @@ def rest_timer_page():
     # Calculate remaining time
     current_time = time.time()
     elapsed = current_time - st.session_state.rest_start_time
-    time_left = max(0, 3 - elapsed)  
+    time_left = max(0, 60 - elapsed)  
     
     st.markdown("""
     <div class='medium-font'>
@@ -796,7 +796,7 @@ def high_prep_page():
         st.session_state.high_prep_start_time = time.time()
     
     elapsed = time.time() - st.session_state.high_prep_start_time
-    prep_time_left = max(0, 1 - elapsed)
+    prep_time_left = max(0, 180 - elapsed)
     
     if 'high_presentation_topic' not in st.session_state:
         st.session_state.high_presentation_topic = random.choice(["Kelemahan Anda"])
@@ -838,7 +838,7 @@ def high_presentation_page():
         st.session_state.high_presentation_start_time = time.time()
     
     elapsed = time.time() - st.session_state.high_presentation_start_time
-    presentation_time_left = max(0, 3 - elapsed)
+    presentation_time_left = max(0, 300 - elapsed)
     
     st.markdown("### Topik Presentasi Anda:")
     st.markdown(f"<div style='padding:10px; background-color:#ffcccb; border-radius:5px; color:#ff0000; font-size:24px; font-weight:bold;'>{st.session_state.high_presentation_topic}</div>", unsafe_allow_html=True)
@@ -893,7 +893,7 @@ def high_arithmetic_page():
     st.markdown("---")
     
     elapsed = time.time() - st.session_state.arithmetic_start_time
-    time_left = max(0, 3 - elapsed)  # 5 menit = 300 detik
+    time_left = max(0, 300 - elapsed)  # 5 menit = 300 detik
     
     minutes, seconds = divmod(int(time_left), 60)
     st.markdown(f"### Waktu Tersisa: {minutes:02d}:{seconds:02d}")
@@ -1001,7 +1001,7 @@ def presentation_prep_page():
         st.session_state.prep_start_time = time.time()
     
     elapsed = time.time() - st.session_state.prep_start_time
-    time_left = max(0, 1 - elapsed)
+    time_left = max(0, 180 - elapsed)
 
     st.markdown("### Topik Presentasi Anda:")
     st.markdown(f"<div style='padding:10px; background-color:#cce5ff; border-radius:5px; font-size:24px; font-weight:bold;'>{st.session_state.selected_topic}</div>", unsafe_allow_html=True)
@@ -1042,7 +1042,7 @@ def presentation_page():
     
     # Calculate remaining time
     elapsed = time.time() - st.session_state.presentation_start_time
-    time_left = max(0, 3 - elapsed)  # 5 menit = 300 detik
+    time_left = max(0, 300 - elapsed)  # 5 menit = 300 detik
     
     st.markdown("### Topik Presentasi Anda:")
     st.markdown(f"<div style='padding:10px; background-color:#cce5ff; border-radius:5px; font-size:24px; font-weight:bold;'>{st.session_state.selected_topic}</div>", unsafe_allow_html=True)
@@ -1093,7 +1093,7 @@ def arithmetic_task_page():
     
     # Hitung waktu tersisa
     elapsed = time.time() - st.session_state.arithmetic_start_time
-    time_left = max(0, 3 - elapsed)  # 5 menit = 300 detik
+    time_left = max(0, 300 - elapsed)  # 5 menit = 300 detik
     
     # Tampilkan waktu tersisa
     minutes = int(time_left // 60)
