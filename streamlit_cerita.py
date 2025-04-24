@@ -1089,7 +1089,7 @@ def arithmetic_task_page():
     
     # Hitung waktu tersisa
     elapsed = time.time() - st.session_state.arithmetic_start_time
-    time_left = max(0, 5 - elapsed)  # 5 menit = 300 detik
+    time_left = max(0, 3 - elapsed)  # 5 menit = 300 detik
     
     # Tampilkan waktu tersisa
     minutes = int(time_left // 60)
