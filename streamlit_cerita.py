@@ -1074,6 +1074,11 @@ def presentation_page():
     st.rerun()
 
 def arithmetic_task_page():
+    # Clear all presentation-related states
+    for key in ['presentation_notes', 'selected_topic', 'high_presentation_notes', 'high_presentation_topic']:
+        if key in st.session_state:
+            del st.session_state[key]
+
     st.title("🧮 Tugas Aritmatika - Tahap 2")
     st.markdown("---")
     
@@ -1083,19 +1088,20 @@ def arithmetic_task_page():
     1. Selesaikan soal pengurangan/pembagian berikut<br>
     2. Jawab dengan benar untuk melanjutkan ke soal berikutnya<br>
     3. Anda memiliki waktu 5 menit untuk mengerjakan soal-soal<br>
+    4. Tekan Enter setelah mengisi jawaban
     </div>
     """, unsafe_allow_html=True)
     
-    # Inisialisasi timer
+    # Initialize timer
     if 'arithmetic_start_time' not in st.session_state:
         st.session_state.arithmetic_start_time = time.time()
         st.session_state.arithmetic_time_up = False
     
-    # Hitung waktu tersisa
+    # Calculate remaining time
     elapsed = time.time() - st.session_state.arithmetic_start_time
-    time_left = max(0, 300 - elapsed)  # 5 menit = 300 detik
+    time_left = max(0, 300 - elapsed)  # 5 minutes = 300 seconds
     
-    # Tampilkan waktu tersisa
+    # Display remaining time
     minutes = int(time_left // 60)
     seconds = int(time_left % 60)
     st.markdown(f"### Waktu Tersisa: {minutes:02d}:{seconds:02d}")
@@ -1103,13 +1109,13 @@ def arithmetic_task_page():
     # Progress bar
     st.progress(min(elapsed/300, 1.0))
     
-    # Inisialisasi masalah aritmatika
+    # Initialize arithmetic problems
     if 'arithmetic_problems' not in st.session_state:
         st.session_state.arithmetic_problems = []
         st.session_state.current_problem = 0
         st.session_state.answers = []
         
-        # Generate soal pertama
+        # Generate first problem
         if random.random() > 0.5:
             a = random.randint(500, 999)
             b = random.randint(100, 499)
@@ -1132,11 +1138,12 @@ def arithmetic_task_page():
                 'answer': answer
             })
 
-    # Tampilkan soal saat ini
+    # Display current problem
     problem = st.session_state.arithmetic_problems[st.session_state.current_problem]
+    st.markdown(f"### Soal:")
     st.markdown(f"<div class='big-font'>{problem['question']}</div>", unsafe_allow_html=True)
     
-    # Membuat form untuk input jawaban
+    # Create form for answer input
     with st.form(key='answer_form'):
         answer_key = f"answer_{st.session_state.current_problem}"
         user_answer = st.number_input(
@@ -1146,11 +1153,11 @@ def arithmetic_task_page():
             value=None,
             label_visibility="collapsed"
         )
-        submitted = st.form_submit_button("Submit Jawaban")
+        submitted = st.form_submit_button("Submit (atau tekan Enter)")
     
-    # Handle jawaban yang di-submit
+    # Handle submitted answers
     if submitted or user_answer is not None:
-        if user_answer is not None:  # Hanya proses jika ada jawaban
+        if user_answer is not None:
             is_correct = (user_answer == problem['answer'])
             
             st.session_state.answers.append({
@@ -1161,7 +1168,7 @@ def arithmetic_task_page():
             })
             
             if is_correct:
-                # Generate soal baru setelah jawaban benar
+                # Generate new problem after correct answer
                 if random.random() > 0.5:
                     a = random.randint(500, 999)
                     b = random.randint(100, 499)
@@ -1186,15 +1193,14 @@ def arithmetic_task_page():
                 
                 st.session_state.current_problem += 1
                 st.rerun()
-            # Jika salah, tidak melakukan apa-apa (tetap di soal yang sama)
     
-    # Cek jika waktu habis
+    # Check if time is up
     if time_left <= 0 and not st.session_state.arithmetic_time_up:
         st.session_state.arithmetic_time_up = True
-        st.session_state.page = "rest_timer"  # Langsung ke istirahat
+        st.session_state.page = "rest_timer"
         st.rerun()
     
-    # Auto refresh untuk update timer
+    # Auto refresh for timer update
     time.sleep(0.1)
     st.rerun()
 
