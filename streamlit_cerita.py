@@ -413,35 +413,26 @@ def data_diri_page():
                 st.rerun()
 
 def rest_timer_page():
-    # Hapus semua state yang terkait dengan aritmatika dan presentasi
-    keys_to_clear = [
-        'arithmetic_problems', 'current_problem', 'answers',
-        'presentation_notes', 'selected_topic', 
-        'arithmetic_start_time', 'arithmetic_time_up',
-        'user_answer', 'answer_form'
-    ]
-    for key in keys_to_clear:
-        if key in st.session_state:
-            del st.session_state[key]
-
-    # Hapus semua komponen dari halaman sebelumnya
+    # First, clear any remaining arithmetic history when entering this page
+    if 'answers' in st.session_state:
+        del st.session_state.answers
+    
+    # Clear the page completely
     st.empty()
     
-    # Inisialisasi ulang halaman istirahat
     st.title("⏳ Waktu Istirahat")
     st.markdown("---")
     
-    # Inisialisasi timer jika belum ada
+    # Initialize timer state
     if 'rest_start_time' not in st.session_state:
         st.session_state.rest_start_time = time.time()
         st.session_state.timer_finished = False
     
-    # Hitung waktu tersisa
+    # Calculate remaining time
     current_time = time.time()
     elapsed = current_time - st.session_state.rest_start_time
-    time_left = max(0, 60 - elapsed)  # 1 menit istirahat
+    time_left = max(0, 60 - elapsed)  
     
-    # Tampilkan instruksi
     st.markdown("""
     <div class='medium-font'>
     Silakan beristirahat sejenak sebelum melanjutkan ke tahap berikutnya.
@@ -449,39 +440,63 @@ def rest_timer_page():
     """, unsafe_allow_html=True)
     
     # Progress bar
-    progress = min(elapsed / 60, 1.0)
+    progress = min(elapsed / 60, 1.0)  
     st.progress(progress)
     
-    # Tampilkan waktu tersisa
+    # Display remaining time
     minutes = int(time_left // 60)
     seconds = int(time_left % 60)
     time_display = st.empty()
     time_display.markdown(f"### Waktu Istirahat Tersisa: {minutes:02d}:{seconds:02d}")
     
-    # Container untuk tombol (hanya muncul saat waktu habis)
+    # Container for the button - will only be filled when timer is done
     button_container = st.empty()
     
     if time_left <= 0:
+        # Clear all arithmetic-related state
+        keys_to_clear = [
+            'arithmetic_problems', 
+            'current_problem', 
+            'answers', 
+            'task_completed',
+            'arithmetic_history'
+        ]
+        for key in keys_to_clear:
+            if key in st.session_state:
+                del st.session_state[key]
+        
         st.session_state.timer_finished = True
         time_display.markdown("### Waktu istirahat telah habis!")
         
-        # Tampilkan tombol lanjut
+        # Only now we add the button to the container
         with button_container.container():
             col_btn = st.columns([1, 2, 1])
             with col_btn[1]:
                 if st.button("➡️ Lanjut ke Kuesioner", key="next_after_rest"):
-                    # Hapus state timer
-                    del st.session_state.rest_start_time
-                    del st.session_state.timer_finished
+                    # Clear timer state
+                    keys_to_clear = ['rest_start_time', 'timer_finished']
+                    for key in keys_to_clear:
+                        if key in st.session_state:
+                            del st.session_state[key]
                     
-                    # Tentukan halaman berikutnya
+                    # Determine next page based on current condition
+                    # Only Tahap 1 shows DASS21, others go directly to acute stress questionnaire
                     if st.session_state.current_condition == "Tahap 1":
                         st.session_state.page = "dass21"
                     else:
+                        # For Tahap 2, 3, and 4, go directly to acute stress questionnaire
+                        # Initialize empty DASS21 responses for these conditions to maintain data structure
+                        if 'dass21_responses' not in st.session_state:
+                            st.session_state.dass21_responses = {}
+                            for i in range(len(DASS21_QUESTIONS)):
+                                # Set default responses (first option)
+                                st.session_state.dass21_responses[i] = DASS21_OPTIONS[0]
+                        
                         st.session_state.page = "acute_stress"
                     st.rerun()
     else:
-        # Auto-refresh timer
+        # Don't add anything to the button container when timer is running
+        # This ensures no button will appear
         time.sleep(0.1)
         st.rerun()
 def tahap1_page():
