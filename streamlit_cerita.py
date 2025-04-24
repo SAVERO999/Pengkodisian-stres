@@ -867,9 +867,13 @@ def high_arithmetic_page():
         st.markdown("""
         <div class='medium-font'>
         <b>Instruksi:</b><br>
-        1. Hitung pengurangan serial mulai dari 1022 dengan pengurangan 13<br>
-        2. Anda memiliki waktu 5 menit<br>
-        3. Jika salah, Anda harus memulai kembali dari 1022
+        1. Mulailah dari angka 1022 <br>
+        2. Lakukan pengurangan secara berurutan dengan mengurangi 13 di setiap langkah.<br>
+        3. Anda memiliki waktu maksimal 5 menit untuk menyelesaikan tugas ini <br>
+        4. Setiap hasil pengurangan harus disampaikan secara lisan kepada evaluator, satu per satu.<br>
+        5. Evaluator akan mencatat dan memeriksa setiap jawaban yang Anda sebutkan.<br>
+        6. Jika terjadi kesalahan dalam perhitungan atau penyebutan angka, Anda harus memulai kembali dari angka awal yaitu 1022.<br>
+        
         </div>
         """, unsafe_allow_html=True)
         
