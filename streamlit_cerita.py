@@ -736,7 +736,7 @@ def feeling_evaluation_page():
         """, unsafe_allow_html=True)
         
         elapsed = time.time() - st.session_state.prep_start_time
-        prep_time_left = max(0, 60 - elapsed)
+        prep_time_left = max(0, 6 - elapsed)
         
         st.progress(min(elapsed/60, 1.0))
         st.markdown(f"### Waktu Persiapan Tersisa: {int(prep_time_left//60):02d}:{int(prep_time_left%60):02d}")
@@ -748,14 +748,9 @@ def feeling_evaluation_page():
             key="feeling_prep_input"
         )
         
-        # Only allow continue after time is up
         if prep_time_left <= 0:
-            # Transisi otomatis ke tahap presentasi
             st.session_state.feeling_stage = "presentation"
             st.session_state.presentation_start_time = time.time()
-            st.rerun()
-        else:
-            time.sleep(0.1)
             st.rerun()
     
     # Presentation Stage
@@ -763,41 +758,34 @@ def feeling_evaluation_page():
         st.markdown("### Silakan sampaikan evaluasi Anda kepada evaluator")
         
         elapsed = time.time() - st.session_state.presentation_start_time
-        presentation_time_left = max(0, 180 - elapsed)
+        presentation_time_left = max(0, 1 - elapsed)
         
         st.progress(min(elapsed/180, 1.0))
         st.markdown(f"### Waktu Presentasi Tersisa: {int(presentation_time_left//60):02d}:{int(presentation_time_left%60):02d}")
         
-        st.markdown("#### Catatan Anda:")
-        st.markdown(f'<div class="custom-card">{st.session_state.feeling_response}</div>', unsafe_allow_html=True)
+        # Display the notes in a more persistent way
+        st.markdown("#### Catatan Evaluasi Anda:")
+        st.markdown(f'<div class="custom-card" style="background-color:#f8f9fa; padding:15px; border-radius:10px; margin:10px 0; box-shadow:0 2px 4px rgba(0,0,0,0.1);">{st.session_state.feeling_response}</div>', 
+                   unsafe_allow_html=True)
         
-        # Check if time is up
         if presentation_time_left <= 0 and not st.session_state.feeling_completed:
-            st.session_state.feeling_completed = True
-            # Save response
+            # Save response before clearing
             if 'relaxation_responses' not in st.session_state:
                 st.session_state.relaxation_responses = []
+            
             st.session_state.relaxation_responses.append({
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "response": st.session_state.feeling_response
             })
             
-            # Clear state
-            keys_to_clear = [
-                'feeling_stage', 'feeling_response', 
-                'prep_start_time', 'presentation_start_time',
-                'feeling_completed', 'show_continue_button'
-            ]
-            for key in keys_to_clear:
-                if key in st.session_state:
-                    del st.session_state[key]
-            
-            st.session_state.page = "rest_timer"  # Langsung ke istirahat
+            # Clear only necessary states
+            st.session_state.feeling_completed = True
+            st.session_state.page = "rest_timer"
             st.rerun()
-        
-        time.sleep(0.1)
-        st.rerun()
-
+    
+    # Auto refresh
+    time.sleep(0.1)
+    st.rerun()
 def high_prep_page():
     st.title("📝 Persiapan Presentasi - Tahap 3")
     st.markdown("---")
