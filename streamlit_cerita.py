@@ -411,11 +411,39 @@ def data_diri_page():
                 }
                 st.session_state.page = "tahap1"
                 st.rerun()
-
 def rest_timer_page():
-    # First, clear any remaining arithmetic history when entering this page
-    if 'answers' in st.session_state:
-        del st.session_state.answers
+    # Clear all arithmetic-related states and form elements
+    keys_to_clear = [
+        'arithmetic_problems', 
+        'current_problem', 
+        'answers', 
+        'task_completed',
+        'arithmetic_history',
+        'arithmetic_start_time',
+        'arithmetic_time_up',
+        'high_arithmetic_history',
+        'high_arithmetic_attempts',
+        'high_arithmetic_correct_count',
+        'answer_form',  # Clear form state
+        'answer_0',     # Clear input state
+        'answer_1',     # Clear input state (and so on)
+    ]
+    
+    # Clear all form-related components
+    components.html(
+        """
+        <script>
+        // Remove any remaining form elements
+        const forms = window.parent.document.querySelectorAll('form');
+        forms.forEach(form => form.remove());
+        </script>
+        """,
+        height=0
+    )
+    
+    for key in keys_to_clear:
+        if key in st.session_state:
+            del st.session_state[key]
     
     # Clear the page completely
     st.empty()
@@ -431,7 +459,7 @@ def rest_timer_page():
     # Calculate remaining time
     current_time = time.time()
     elapsed = current_time - st.session_state.rest_start_time
-    time_left = max(0, 60 - elapsed)  
+    time_left = max(0, 10 - elapsed)  
     
     st.markdown("""
     <div class='medium-font'>
@@ -453,18 +481,6 @@ def rest_timer_page():
     button_container = st.empty()
     
     if time_left <= 0:
-        # Clear all arithmetic-related state
-        keys_to_clear = [
-            'arithmetic_problems', 
-            'current_problem', 
-            'answers', 
-            'task_completed',
-            'arithmetic_history'
-        ]
-        for key in keys_to_clear:
-            if key in st.session_state:
-                del st.session_state[key]
-        
         st.session_state.timer_finished = True
         time_display.markdown("### Waktu istirahat telah habis!")
         
@@ -480,25 +496,20 @@ def rest_timer_page():
                             del st.session_state[key]
                     
                     # Determine next page based on current condition
-                    # Only Tahap 1 shows DASS21, others go directly to acute stress questionnaire
                     if st.session_state.current_condition == "Tahap 1":
                         st.session_state.page = "dass21"
                     else:
-                        # For Tahap 2, 3, and 4, go directly to acute stress questionnaire
-                        # Initialize empty DASS21 responses for these conditions to maintain data structure
                         if 'dass21_responses' not in st.session_state:
                             st.session_state.dass21_responses = {}
                             for i in range(len(DASS21_QUESTIONS)):
-                                # Set default responses (first option)
                                 st.session_state.dass21_responses[i] = DASS21_OPTIONS[0]
                         
                         st.session_state.page = "acute_stress"
                     st.rerun()
     else:
-        # Don't add anything to the button container when timer is running
-        # This ensures no button will appear
         time.sleep(0.1)
         st.rerun()
+        
 def tahap1_page():
     st.title("📖 Tahap 1 - Membaca Materi Netral")
     st.markdown("---")
