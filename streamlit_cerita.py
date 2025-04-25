@@ -1110,7 +1110,6 @@ def arithmetic_task_page():
     1. Selesaikan soal pengurangan/pembagian berikut<br>
     2. Jawab dengan benar untuk melanjutkan ke soal berikutnya<br>
     3. Anda memiliki waktu 5 menit untuk mengerjakan soal-soal<br>
-    4. Tekan Enter setelah mengisi jawaban
     </div>
     """, unsafe_allow_html=True)
     
@@ -1175,7 +1174,7 @@ def arithmetic_task_page():
             value=None,
             label_visibility="collapsed"
         )
-        submitted = st.form_submit_button("Submit (atau tekan Enter)")
+        submitted = st.form_submit_button("Masukan Jawaban")
     
     # Handle submitted answers
     if submitted or user_answer is not None:
