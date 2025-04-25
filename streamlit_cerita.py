@@ -573,7 +573,7 @@ def tahap3_page():
             st.rerun()
 
 def tahap4_page():
-    st.title("🧘 Tahap 4 - Relaksasi")
+    st.title("🧘 Tahap 4 ")
     st.markdown("---")
     
     st.markdown("""
