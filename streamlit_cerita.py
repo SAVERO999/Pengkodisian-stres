@@ -841,6 +841,13 @@ def high_prep_page():
         st.rerun()
 
 def high_presentation_page():
+    # Clear any remaining button state from preparation
+    if 'proceed_to_high_presentation' in st.session_state:
+        del st.session_state.proceed_to_high_presentation
+    
+    # Clear the page completely first
+    st.empty()
+    
     st.title("🎤 Presentasi - Tahap 3")
     st.markdown("---")
     
@@ -863,8 +870,25 @@ def high_presentation_page():
         st.session_state.page = "high_arithmetic"  # Langsung ke aritmatika tahap 3
         st.rerun()
     
+    # Add JavaScript to remove any remaining buttons
+    components.html(
+        """
+        <script>
+        // Remove any button elements that might remain
+        const buttons = window.parent.document.querySelectorAll('button');
+        buttons.forEach(button => {
+            if (button.textContent.includes('Lanjut ke Presentasi')) {
+                button.remove();
+            }
+        });
+        </script>
+        """,
+        height=0
+    )
+    
     time.sleep(0.1)
     st.rerun()
+    
     
 def high_arithmetic_page():
     if 'show_arithmetic_instructions' not in st.session_state:
