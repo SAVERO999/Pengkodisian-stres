@@ -736,7 +736,7 @@ def feeling_evaluation_page():
         """, unsafe_allow_html=True)
         
         elapsed = time.time() - st.session_state.prep_start_time
-        prep_time_left = max(0, 6 - elapsed)
+        prep_time_left = max(0, 60 - elapsed)
         
         st.progress(min(elapsed/60, 1.0))
         st.markdown(f"### Waktu Persiapan Tersisa: {int(prep_time_left//60):02d}:{int(prep_time_left%60):02d}")
@@ -758,7 +758,7 @@ def feeling_evaluation_page():
         st.markdown("### Silakan sampaikan evaluasi Anda kepada evaluator")
         
         elapsed = time.time() - st.session_state.presentation_start_time
-        presentation_time_left = max(0, 1 - elapsed)
+        presentation_time_left = max(0, 180 - elapsed)
         
         st.progress(min(elapsed/180, 1.0))
         st.markdown(f"### Waktu Presentasi Tersisa: {int(presentation_time_left//60):02d}:{int(presentation_time_left%60):02d}")
