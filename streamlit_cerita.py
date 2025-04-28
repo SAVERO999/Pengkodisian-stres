@@ -491,7 +491,7 @@ def rest_timer_page():
     # Calculate remaining time
     current_time = time.time()
     elapsed = current_time - st.session_state.rest_start_time
-    time_left = max(0, 60 - elapsed)  
+    time_left = max(0, 1 - elapsed)  
     
     st.markdown("""
     <div class='medium-font'>
