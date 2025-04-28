@@ -7,13 +7,6 @@ import base64
 import time
 from datetime import datetime
 import streamlit.components.v1 as components
-import io
-import numpy as np
-import wave
-import docx
-import os.path
-
-
 
 # ============================================
 # KONFIGURASI HALAMAN
@@ -313,7 +306,6 @@ def save_session_results(condition):
         result_data["Jumlah Percobaan Aritmatika"] = st.session_state.get("high_arithmetic_attempts", 0)
         result_data["Jawaban Benar Berturut-turut"] = st.session_state.get("high_arithmetic_correct_count", 0)
         
-        # Tambahkan data riwayat aritmatika tingkat tinggi
         if 'high_arithmetic_history' in st.session_state:
             for i, item in enumerate(st.session_state.high_arithmetic_history):
                 result_data[f"Tugas_Aritmatika_{i+1}_Soal"] = item['question']
@@ -321,21 +313,18 @@ def save_session_results(condition):
                 result_data[f"Tugas_Aritmatika_{i+1}_Benar"] = item['correct']
                 if not item['correct']:
                     result_data[f"Tugas_Aritmatika_{i+1}_Jawaban_Benar"] = item.get('correct_answer', '')
-        
-        # Tambahkan data MIST
-        if 'mist_history' in st.session_state:
-            result_data["MIST_Total_Soal"] = len(st.session_state.mist_history)
-            correct_mist = sum(1 for item in st.session_state.mist_history if item['correct'])
-            result_data["MIST_Jawaban_Benar"] = correct_mist
-            result_data["MIST_Persentase_Benar"] = round((correct_mist / len(st.session_state.mist_history)) * 100, 2) if st.session_state.mist_history else 0
-            
-            # Simpan detail jawaban MIST
-            for i, item in enumerate(st.session_state.mist_history):
-                result_data[f"MIST_{i+1}_Soal"] = item['question']
-                result_data[f"MIST_{i+1}_Jawaban"] = item['user_answer']
-                result_data[f"MIST_{i+1}_Jawaban_Benar"] = item['correct_answer']
-                result_data[f"MIST_{i+1}_Benar"] = item['correct']
-                result_data[f"MIST_{i+1}_Waktu"] = item['time']
+    
+    if condition == "Tahap 4":
+        result_data["Jenis_Relaksasi"] = "PMR dan Musik"
+        result_data["Durasi_Relaksasi"] = "9 menit 12 detik"
+    
+    if 'results' not in st.session_state:
+        st.session_state.results = []
+    st.session_state.results.append(result_data)
+    
+    if 'completed_conditions' not in st.session_state:
+        st.session_state.completed_conditions = []
+    st.session_state.completed_conditions.append(condition)
 
 # ============================================
 # HALAMAN APLIKASI
@@ -422,7 +411,6 @@ def data_diri_page():
                 }
                 st.session_state.page = "tahap1"
                 st.rerun()
-                
 def rest_timer_page():
     # Clear all arithmetic-related states and form elements
     keys_to_clear = [
@@ -439,28 +427,6 @@ def rest_timer_page():
         'answer_form',  # Clear form state
         'answer_0',     # Clear input state
         'answer_1',     # Clear input state (and so on)
-        # Tambahkan keys untuk MIST yang perlu dibersihkan
-        'mist_initialized',
-        'current_question',
-        'current_answer',
-        'correct_answer',
-        'response_status',
-        'question_start_time',
-        'question_time_limit',
-        'total_elapsed_time',
-        'last_update_time',
-        'correct_answers',
-        'incorrect_answers',
-        'total_questions',
-        'consecutive_correct',
-        'consecutive_incorrect',
-        'difficulty_level',
-        'response_times',
-        'average_response_time',
-        'show_response_until',
-        'last_sound_time',
-        'game_over',
-        'should_clear_response'
     ]
     
     # Clear all form-related components
@@ -585,17 +551,16 @@ def tahap2_page():
             st.session_state.page = "cerita_setup"
             st.rerun()
 
-
 def tahap3_page():
-    st.title("🎤 Tahap 3 - Kombinasi Tugas Stres")
+    st.title("🎤 Tahap 3 - Presentasi Kelemahan Diri")
     st.markdown("---")
     
     st.markdown("""
     <div class='medium-font'>
     <b>Instruksi:</b><br>
-    1. Anda akan mengerjakan dua tugas aritmatika berturut-turut<br>
-    2. Tugas pertama: pengurangan serial 13 dari 1022 (5 menit)<br>
-    3. Tugas kedua: tes aritmatika MIST (5 menit)<br>
+    1. Anda akan mempersiapkan presentasi tentang "kelemahan diri" selama 3 menit<br>
+    2. Presentasikan di depan evaluator selama 5 menit<br>
+    3. Dilanjutkan dengan tugas aritmatika sulit (pengurangan serial 13 dari 1022)
     </div>
     """, unsafe_allow_html=True)
     
@@ -604,7 +569,7 @@ def tahap3_page():
     with col_btn[1]:
         if st.button("▶️ Mulai Tahap 3", key="start_tahap3"):
             st.session_state.current_condition = "Tahap 3"
-            st.session_state.page = "high_arithmetic"
+            st.session_state.page = "high_prep"
             st.rerun()
 
 def tahap4_page():
@@ -722,14 +687,11 @@ def music_session_page():
     if 'music_start_time' not in st.session_state:
         st.session_state.music_start_time = time.time()
     
-    # Check if audio file exists
-    audio_file_path = 'the-blue-danube-op-314-johann-strauss-ii-arranged-for-solo-piano-212208 (mp3cut.net).mp3'
-    if os.path.exists(audio_file_path):
-        audio_file = open(audio_file_path, 'rb')
-        audio_bytes = audio_file.read()
-        st.audio(audio_bytes, format='audio/mp3', start_time=0)
-    else:
-        st.error(f"File audio tidak ditemukan: {audio_file_path}")
+    # Audio player dengan musik The Blue Danube
+    audio_file = open('the-blue-danube-op-314-johann-strauss-ii-arranged-for-solo-piano-212208 (mp3cut.net).mp3', 'rb')
+    audio_bytes = audio_file.read()
+    
+    st.audio(audio_bytes, format='audio/mp3', start_time=0)
     
     elapsed = time.time() - st.session_state.music_start_time
     time_left = max(0, 330 - elapsed)  # 5 menit = 300 detik
@@ -824,7 +786,97 @@ def feeling_evaluation_page():
     # Auto refresh
     time.sleep(0.1)
     st.rerun()
+def high_prep_page():
+    st.title("📝 Persiapan Presentasi - Tahap 3")
+    st.markdown("---")
+    
+    if 'high_prep_start_time' not in st.session_state:
+        st.session_state.high_prep_start_time = time.time()
+    
+    elapsed = time.time() - st.session_state.high_prep_start_time
+    prep_time_left = max(0, 180 - elapsed)
+    
+    if 'high_presentation_topic' not in st.session_state:
+        st.session_state.high_presentation_topic = random.choice(["Kelemahan Anda"])
+    
+    st.markdown("### Topik Presentasi Anda:")
+    st.markdown(f"<div style='padding:10px; background-color:#ffcccb; border-radius:5px; color:#ff0000; font-size:24px; font-weight:bold;'>{st.session_state.high_presentation_topic}</div>", unsafe_allow_html=True)
+    
+    minutes, seconds = divmod(int(prep_time_left), 60)
+    st.markdown(f"### Waktu Persiapan: {minutes:02d}:{seconds:02d}")
+    
+    st.markdown("### Catatan Persiapan Anda:")
+    if 'high_presentation_notes' not in st.session_state:
+        st.session_state.high_presentation_notes = ""
+    
+    st.session_state.high_presentation_notes = st.text_area(
+        "Tulis catatan presentasi Anda di sini:",
+        value=st.session_state.high_presentation_notes,
+        height=300,
+        key="high_prep_notes",
+        label_visibility="collapsed"
+    )
+    
+    if prep_time_left <= 0:
+        col_btn = st.columns([1, 2, 1])
+        with col_btn[1]:
+            if st.button("➡️ Lanjut ke Presentasi", key="proceed_to_high_presentation"):
+                st.session_state.high_presentation_start_time = time.time()
+                st.session_state.page = "high_presentation"
+                st.rerun()
+    else:
+        time.sleep(0.1)
+        st.rerun()
 
+def high_presentation_page():
+    # Clear any remaining button state from preparation
+    if 'proceed_to_high_presentation' in st.session_state:
+        del st.session_state.proceed_to_high_presentation
+    
+    # Clear the page completely first
+    st.empty()
+    
+    st.title("🎤 Presentasi - Tahap 3")
+    st.markdown("---")
+    
+    if 'high_presentation_start_time' not in st.session_state:
+        st.session_state.high_presentation_start_time = time.time()
+    
+    elapsed = time.time() - st.session_state.high_presentation_start_time
+    presentation_time_left = max(0, 300 - elapsed)
+    
+    st.markdown("### Topik Presentasi Anda:")
+    st.markdown(f"<div style='padding:10px; background-color:#ffcccb; border-radius:5px; color:#ff0000; font-size:24px; font-weight:bold;'>{st.session_state.high_presentation_topic}</div>", unsafe_allow_html=True)
+    
+    minutes, seconds = divmod(int(presentation_time_left), 60)
+    st.markdown(f"### Waktu Presentasi: {minutes:02d}:{seconds:02d}")
+    
+    st.markdown("### Catatan Persiapan Anda:")
+    st.write(st.session_state.high_presentation_notes)
+    
+    if presentation_time_left <= 0:
+        st.session_state.page = "high_arithmetic"  # Langsung ke aritmatika tahap 3
+        st.rerun()
+    
+    # Add JavaScript to remove any remaining buttons
+    components.html(
+        """
+        <script>
+        // Remove any button elements that might remain
+        const buttons = window.parent.document.querySelectorAll('button');
+        buttons.forEach(button => {
+            if (button.textContent.includes('Lanjut ke Presentasi')) {
+                button.remove();
+            }
+        });
+        </script>
+        """,
+        height=0
+    )
+    
+    time.sleep(0.1)
+    st.rerun()
+    
     
 def high_arithmetic_page():
     if 'show_arithmetic_instructions' not in st.session_state:
@@ -872,491 +924,11 @@ def high_arithmetic_page():
     st.progress(progress)
     
     if time_left <= 0:
-        # Perubahan: setelah waktu habis, lanjut ke MIST
-        st.session_state.page = "mist_simulation"
+        st.session_state.page = "rest_timer"
         st.rerun()
     
     time.sleep(0.1)
     st.rerun()
-# Tambahkan fungsi MIST simulation
-def mist_simulation_page():
-    
-    # Initialize session state variables if they don't exist
-    if 'mist_initialized' not in st.session_state:
-        st.session_state.mist_initialized = True
-        st.session_state.current_question = ""
-        st.session_state.current_answer = ""
-        st.session_state.correct_answer = ""
-        st.session_state.response_status = None
-        st.session_state.question_start_time = time.time()
-        st.session_state.question_time_limit = 10  # Initial time limit (seconds)
-        st.session_state.total_elapsed_time = 0
-        st.session_state.start_time = time.time()
-        st.session_state.last_update_time = time.time()
-        st.session_state.correct_answers = 0
-        st.session_state.incorrect_answers = 0
-        st.session_state.total_questions = 0
-        st.session_state.consecutive_correct = 0
-        st.session_state.consecutive_incorrect = 0
-        st.session_state.difficulty_level = 1
-        st.session_state.response_times = []
-        st.session_state.average_response_time = 5  # Initial average (seconds)
-        st.session_state.show_response_until = 0
-        st.session_state.fake_average_correct_rate = 0.75  # 75% correct rate for "other subjects"
-        st.session_state.user_correct_rate = 0
-        st.session_state.game_over = False
-        st.session_state.should_clear_response = False
-        st.session_state.last_sound_time = 0  # Track when we last played a sound
-        
-        # Simpan riwayat MIST untuk dimasukkan ke dalam hasil akhir
-        if 'mist_history' not in st.session_state:
-            st.session_state.mist_history = []
-        
-        # Total duration in seconds (5 minutes)
-        st.session_state.MIST_TOTAL_DURATION = 300
-    
-    # CSS untuk styling
-    st.markdown("""
-    <style>
-        .stButton>button {
-            width: 100%;
-            height: 50px;
-            font-size: 20px;
-        }
-        .big-font {
-            font-size: 30px;
-            font-weight: bold;
-            text-align: center;
-        }
-        .answer-font {
-            font-size: 24px;
-            text-align: center;
-            padding: 10px;
-            color: blue;
-        }
-        .result-correct {
-            color: green;
-            font-size: 28px;
-            text-align: center;
-            padding: 10px;
-            font-weight: bold;
-        }
-        .result-incorrect {
-            color: red;
-            font-size: 28px;
-            text-align: center;
-            padding: 10px;
-            font-weight: bold;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # Function to generate a new question
-    def generate_question():
-        # Clear response status before generating a new question
-        st.session_state.response_status = None
-        st.session_state.should_clear_response = True
-        
-        st.session_state.total_questions += 1
-        
-        if st.session_state.difficulty_level == 1:
-            # Level 1: Simple addition/subtraction
-            num1 = random.randint(1, 99)
-            num2 = random.randint(1, 99)
-            operator = random.choice(['+', '-'])
-            
-            if operator == '+':
-                result = num1 + num2
-            else:  # operator == '-'
-                # Ensure result is positive
-                if num1 < num2:
-                    num1, num2 = num2, num1
-                result = num1 - num2
-                
-            st.session_state.current_question = f"{num1} {operator} {num2} = ?"
-            st.session_state.correct_answer = str(result)
-            
-        elif st.session_state.difficulty_level == 2:
-            # Level 2: Two operations
-            num1 = random.randint(2, 20)
-            num2 = random.randint(2, 10)
-            num3 = random.randint(1, 20)
-            operators = random.sample(['+', '-', '*'], 2)
-            
-            # Create equation ensuring it results in a positive integer
-            equation = f"{num1} {operators[0]} {num2} {operators[1]} {num3}"
-            result = eval(equation)  # Safe here since we control the inputs
-            
-            st.session_state.current_question = f"{equation} = ?"
-            st.session_state.correct_answer = str(result)
-            
-        else:  # difficulty_level == 3
-            # Level 3: Three operations
-            num1 = random.randint(2, 15)
-            num2 = random.randint(2, 10)
-            num3 = random.randint(2, 8)
-            num4 = random.randint(2, 5)
-            operators = random.sample(['+', '-', '*'], 3)
-            
-            # Create a safe expression
-            expression = f"{num1} {operators[0]} {num2} {operators[1]} {num3} {operators[2]} {num4}"
-            
-            try:
-                # Using eval safely with string manipulation for arithmetic only
-                result = eval(expression)
-                if result < 0 or not isinstance(result, int):
-                    # If not a positive integer, try again
-                    return generate_question()
-                    
-                st.session_state.current_question = f"{expression} = ?"
-                st.session_state.correct_answer = str(result)
-            except:
-                # If error, try again
-                return generate_question()
-        
-        # Reset answer input and timer
-        st.session_state.current_answer = ""
-        st.session_state.question_start_time = time.time()
-        st.session_state.last_sound_time = 0  # Reset sound timing
-    
-    # Function to adjust difficulty
-    def adjust_difficulty():
-        if st.session_state.total_questions > 5:
-            correct_rate = st.session_state.correct_answers / st.session_state.total_questions
-            if correct_rate > 0.8 and st.session_state.difficulty_level < 3:
-                st.session_state.difficulty_level += 1
-            elif correct_rate < 0.3 and st.session_state.difficulty_level > 1:
-                st.session_state.difficulty_level -= 1
-    
-    # Function to adjust time limit
-    def adjust_time_limit():
-        if st.session_state.consecutive_correct >= 3:
-            # Reduce time by 10%
-            st.session_state.question_time_limit = max(2, st.session_state.question_time_limit * 0.9)
-            st.session_state.consecutive_correct = 0
-        elif st.session_state.consecutive_incorrect >= 3:
-            # Increase time by 10%
-            st.session_state.question_time_limit *= 1.1
-            st.session_state.consecutive_incorrect = 0
-    
-    # Function to update performance metrics
-    def update_performance_metrics(response_time, correct):
-        st.session_state.response_times.append(response_time)
-        st.session_state.average_response_time = sum(st.session_state.response_times) / len(st.session_state.response_times)
-        
-        if correct:
-            st.session_state.correct_answers += 1
-            st.session_state.consecutive_correct += 1
-            st.session_state.consecutive_incorrect = 0
-        else:
-            st.session_state.incorrect_answers += 1
-            st.session_state.consecutive_incorrect += 1
-            st.session_state.consecutive_correct = 0
-        
-        st.session_state.user_correct_rate = st.session_state.correct_answers / max(1, st.session_state.total_questions)
-        adjust_time_limit()
-        adjust_difficulty()
-        
-        # Save the question result to history
-        st.session_state.mist_history.append({
-            'question': st.session_state.current_question,
-            'correct_answer': st.session_state.correct_answer,
-            'user_answer': st.session_state.current_answer,
-            'correct': correct,
-            'time': response_time,
-            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        })
-    
-    # Function to submit answer
-    def submit_answer():
-        response_time = time.time() - st.session_state.question_start_time
-        
-        if st.session_state.current_answer == st.session_state.correct_answer:
-            st.session_state.response_status = "Correct"
-            update_performance_metrics(response_time, True)
-        else:
-            st.session_state.response_status = "Incorrect"
-            update_performance_metrics(response_time, False)
-        
-        # Show response for 1.5 seconds
-        st.session_state.show_response_until = time.time() + 1.5
-        st.session_state.should_clear_response = False
-    
-    # Create metronome sound function
-    def get_metronome_sound(fast=False):
-        # Create a more attention-grabbing sound
-        sample_rate = 44100
-        
-        if fast:
-            # Faster, higher-pitched sound for urgency
-            duration = 0.08  # Shorter duration
-            frequency = 880  # Higher pitch (A5 note)
-            
-            # Create initial tone
-            t = np.linspace(0, duration, int(sample_rate * duration), False)
-            tone = np.sin(2 * np.pi * frequency * t)
-            
-            # Add slight drop in pitch at the end for more urgency
-            end_duration = 0.02
-            end_t = np.linspace(0, end_duration, int(sample_rate * end_duration), False)
-            end_tone = np.sin(2 * np.pi * (frequency*0.9) * end_t)
-            
-            # Combine tones with slight volume drop
-            tone = np.concatenate([tone * 0.8, end_tone * 0.6])
-        else:
-            # Regular metronome sound
-            duration = 0.1  # 100ms
-            frequency = 660  # E5 note
-            
-            # Create tone with slight attack and decay
-            t = np.linspace(0, duration, int(sample_rate * duration), False)
-            tone = np.sin(2 * np.pi * frequency * t)
-            
-            # Apply envelope for better sound (attack and decay)
-            envelope = np.ones_like(tone)
-            attack_samples = int(0.01 * sample_rate)  # 10ms attack
-            decay_samples = int(0.05 * sample_rate)   # 50ms decay
-            
-            # Attack (fade in)
-            envelope[:attack_samples] = np.linspace(0, 1, attack_samples)
-            # Decay (fade out)
-            envelope[-decay_samples:] = np.linspace(1, 0, decay_samples)
-            
-            tone = tone * envelope * 0.7  # Apply envelope and adjust volume
-        
-        # Convert to 16-bit data
-        audio_data = (tone * 32767).astype(np.int16)
-        
-        # Create WAV file in memory
-        buffer = io.BytesIO()
-        with wave.open(buffer, 'wb') as wf:
-            wf.setnchannels(1)
-            wf.setsampwidth(2)
-            wf.setframerate(sample_rate)
-            wf.writeframes(audio_data.tobytes())
-        
-        # Get the WAV file content and encode as base64
-        buffer.seek(0)
-        audio_base64 = base64.b64encode(buffer.read()).decode('utf-8')
-        audio_html = f'<audio autoplay="true"><source src="data:audio/wav;base64,{audio_base64}" type="audio/wav"></audio>'
-        return audio_html
-    
-    # Generate first question if needed
-    if not st.session_state.current_question:
-        generate_question()
-    
-    # Update elapsed time
-    current_time = time.time()
-    time_delta = current_time - st.session_state.last_update_time
-    st.session_state.total_elapsed_time += time_delta
-    st.session_state.last_update_time = current_time
-    
-    # Display progress bar
-    progress = min(1.0, st.session_state.total_elapsed_time / st.session_state.MIST_TOTAL_DURATION)
-    st.progress(progress)
-    
-    # Time remaining
-    time_left = max(0, st.session_state.MIST_TOTAL_DURATION - st.session_state.total_elapsed_time)
-    st.write(f"**Waktu Tersisa:** {int(time_left)} detik")
-    
-    # Game over check
-    if time_left <= 0 and not st.session_state.game_over:
-        st.session_state.game_over = True
-        # Move to next page after game over
-        st.session_state.page = "rest_timer"
-        st.rerun()
-    
-    # Calculate current question timer
-    question_elapsed = current_time - st.session_state.question_start_time
-    remaining_time = max(0, st.session_state.question_time_limit - question_elapsed)
-    
-    # Check for time's up on current question
-    if remaining_time <= 0 and st.session_state.response_status is None:
-        st.session_state.response_status = "Time's up"
-        update_performance_metrics(st.session_state.question_time_limit, False)
-        st.session_state.show_response_until = current_time + 1.5
-        st.session_state.should_clear_response = False
-    
-    # Question timer display
-    timer_progress = max(0, min(1.0, remaining_time / st.session_state.question_time_limit))
-    st.write(f"**Waktu Soal:** {remaining_time:.1f} detik")
-    timer_color = "green" if timer_progress > 0.5 else "yellow" if timer_progress > 0.25 else "red"
-    st.progress(timer_progress)
-    
-    # Metronome sound logic
-    sound_container = st.empty()
-    if st.session_state.response_status is None and not st.session_state.game_over:
-        play_sound = False
-        sound_interval = 1.0  # Default interval (1 second)
-        
-        # Adjust sound frequency based on remaining time
-        if remaining_time < 3:
-            # Fast tempo when time is running out (4 times per second)
-            sound_interval = 0.25
-            if current_time - st.session_state.last_sound_time >= sound_interval:
-                play_sound = True
-                # Use urgent sound when time < 3 seconds
-                sound_container.markdown(get_metronome_sound(fast=True), unsafe_allow_html=True)
-                st.session_state.last_sound_time = current_time
-        elif remaining_time < 5:
-            # Medium tempo (2 times per second)
-            sound_interval = 0.5
-            if current_time - st.session_state.last_sound_time >= sound_interval:
-                play_sound = True
-                # Use more urgent sound when time < 5 seconds
-                sound_container.markdown(get_metronome_sound(fast=True), unsafe_allow_html=True)
-                st.session_state.last_sound_time = current_time
-        else:
-            # Normal tempo (1 time per second)
-            sound_interval = 1.0
-            if current_time - st.session_state.last_sound_time >= sound_interval:
-                play_sound = True
-                # Use normal metronome sound
-                sound_container.markdown(get_metronome_sound(fast=False), unsafe_allow_html=True)
-                st.session_state.last_sound_time = current_time
-    
-    # Create placeholders for feedback at the top level
-    question_display = st.empty()
-    answer_display = st.empty()
-    feedback_display = st.empty() 
-    correct_answer_display = st.empty()
-    
-    # Game content section
-    if not st.session_state.game_over:
-        # Display question
-        question_display.markdown(f'<div class="big-font">{st.session_state.current_question}</div>', unsafe_allow_html=True)
-        
-        # Display current answer
-        answer_display.markdown(f'<div class="answer-font">Jawaban: {st.session_state.current_answer}</div>', unsafe_allow_html=True)
-        
-        # Handle response message (correct/incorrect)
-        if st.session_state.response_status:
-            if current_time < st.session_state.show_response_until:
-                result_class = "result-correct" if st.session_state.response_status == "Correct" else "result-incorrect"
-                feedback_display.markdown(f'<div class="{result_class}">{st.session_state.response_status}</div>', unsafe_allow_html=True)
-                
-                # Show the correct answer if incorrect
-                if st.session_state.response_status == "Incorrect" or st.session_state.response_status == "Time's up":
-                    correct_answer_display.markdown(f'<div class="answer-font">Jawaban benar: {st.session_state.correct_answer}</div>', unsafe_allow_html=True)
-            else:
-                # Clear the feedback displays when time has expired
-                feedback_display.empty()
-                correct_answer_display.empty()
-                
-                # Time to show a new question
-                generate_question()
-                st.rerun()
-        elif st.session_state.should_clear_response:
-            # Clear feedback on new questions
-            feedback_display.empty()
-            correct_answer_display.empty()
-            st.session_state.should_clear_response = False
-        
-        # Number input
-        keypad_container = st.container()
-        
-        if st.session_state.response_status is None:
-            with keypad_container:
-                # Create a more compact horizontal keypad
-                st.markdown("""
-                <style>
-                .number-button {
-                    display: inline-block;
-                    width: 40px;
-                    height: 40px;
-                    margin: 3px;
-                    text-align: center;
-                    line-height: 40px;
-                    background-color: #f0f0f0;
-                    border-radius: 5px;
-                    cursor: pointer;
-                    font-size: 18px;
-                    font-weight: bold;
-                }
-                .control-button {
-                    display: inline-block;
-                    width: auto;
-                    padding: 0 15px;
-                    height: 40px;
-                    margin: 3px;
-                    text-align: center;
-                    line-height: 40px;
-                    background-color: #e0e0e0;
-                    border-radius: 5px;
-                    cursor: pointer;
-                    font-size: 16px;
-                }
-                .submit-button {
-                    background-color: #4CAF50;
-                    color: white;
-                }
-                .backspace-button {
-                    background-color: #f44336;
-                    color: white;
-                }
-                </style>
-                """, unsafe_allow_html=True)
-                
-                # Create a single row with all digits
-                cols = st.columns(12)  # More columns for a horizontal layout
-                
-                # Add digits 0-9 in a row
-                for i in range(10):
-                    with cols[i]:
-                        if st.button(f"{i}", key=f"mist_num_{i}", use_container_width=True):
-                            st.session_state.current_answer += str(i)
-                
-                # Add backspace and submit
-                with cols[10]:
-                    if st.button("⌫", key="mist_backspace", use_container_width=True):
-                        if st.session_state.current_answer:
-                            st.session_state.current_answer = st.session_state.current_answer[:-1]
-                
-                with cols[11]:
-                    if st.button("✓", key="mist_submit", type="primary", use_container_width=True):
-                        if st.session_state.current_answer:
-                            submit_answer()
-    else:
-        # Game over display
-        question_display.write("# Tes Selesai")
-        answer_display.write(f"## Skor Akhir: {st.session_state.correct_answers}/{st.session_state.total_questions}")
-        
-        # Tunggu sebentar, lalu pindah ke halaman selanjutnya
-        time.sleep(2)
-        
-        # Integrasi dengan file utama: Simpan hasil ke session state
-        st.session_state.mist_score = st.session_state.correct_answers
-        st.session_state.mist_total = st.session_state.total_questions
-        st.session_state.page = "rest_timer"
-        st.rerun()
-    
-    # Performance metrics
-    metrics_container = st.container()
-    
-    with metrics_container:
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            your_score = int(st.session_state.user_correct_rate * 100)
-            st.progress(st.session_state.user_correct_rate)
-            st.write(f"Performa Anda: {your_score}%")
-            
-            avg_score = int(st.session_state.fake_average_correct_rate * 100)
-            st.progress(st.session_state.fake_average_correct_rate)
-            st.write(f"Rata-rata Performa: {avg_score}%")
-        
-        with col2:
-            st.write(f"**Skor:** {st.session_state.correct_answers}/{st.session_state.total_questions}")
-            st.write(f"**Level:** {st.session_state.difficulty_level}")
-            st.write(f"**Waktu Rata-rata:** {st.session_state.average_response_time:.1f} detik")
-    
-    # Auto-refresh for timer updates
-    if not st.session_state.game_over:
-        # Use a container for the refresh to avoid duplicating elements
-        refresh_container = st.empty()
-        time.sleep(0.1)  # Small delay to reduce CPU usage
-        st.rerun()
-
 
 def cerita_setup_page():
     st.title(f"⚙️ Pengaturan - {st.session_state.current_condition}")
@@ -1548,7 +1120,7 @@ def arithmetic_task_page():
     
     # Calculate remaining time
     elapsed = time.time() - st.session_state.arithmetic_start_time
-    time_left = max(0, 300 - elapsed)  # 3 seconds
+    time_left = max(0, 300 - elapsed)  # 5 minutes = 300 seconds
     
     # Display remaining time
     minutes = int(time_left // 60)
@@ -1990,8 +1562,9 @@ def main():
         "music_instructions": music_instructions_page,
         "music_session": music_session_page,
         "feeling_evaluation": feeling_evaluation_page,
+        "high_prep": high_prep_page,
+        "high_presentation": high_presentation_page,
         "high_arithmetic": high_arithmetic_page,
-        "mist_simulation": mist_simulation_page,
         "cerita_setup": cerita_setup_page,
         "cerita": cerita_page,
         "presentation_prep": presentation_prep_page,
@@ -2005,5 +1578,9 @@ def main():
     pages[st.session_state.page]()
 
 if __name__ == "__main__":
-    # Hapus pengecekan docx di sini karena sudah dipindahkan ke bagian import
+    try:
+        import docx
+    except ImportError:
+        st.error("Modul python-docx tidak terinstall. Silakan install dengan 'pip install python-docx'")
+    
     main()
