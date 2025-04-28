@@ -10,6 +10,8 @@ import streamlit.components.v1 as components
 import io
 import numpy as np
 import wave
+import docx
+import os.path
 
 
 
@@ -720,11 +722,14 @@ def music_session_page():
     if 'music_start_time' not in st.session_state:
         st.session_state.music_start_time = time.time()
     
-    # Audio player dengan musik The Blue Danube
-    audio_file = open('the-blue-danube-op-314-johann-strauss-ii-arranged-for-solo-piano-212208 (mp3cut.net).mp3', 'rb')
-    audio_bytes = audio_file.read()
-    
-    st.audio(audio_bytes, format='audio/mp3', start_time=0)
+    # Check if audio file exists
+    audio_file_path = 'the-blue-danube-op-314-johann-strauss-ii-arranged-for-solo-piano-212208 (mp3cut.net).mp3'
+    if os.path.exists(audio_file_path):
+        audio_file = open(audio_file_path, 'rb')
+        audio_bytes = audio_file.read()
+        st.audio(audio_bytes, format='audio/mp3', start_time=0)
+    else:
+        st.error(f"File audio tidak ditemukan: {audio_file_path}")
     
     elapsed = time.time() - st.session_state.music_start_time
     time_left = max(0, 330 - elapsed)  # 5 menit = 300 detik
