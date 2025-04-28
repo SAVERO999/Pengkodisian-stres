@@ -1,4 +1,4 @@
-import streamlit as st
+mport streamlit as st
 import pandas as pd
 import random
 import re
@@ -558,9 +558,9 @@ def tahap3_page():
     st.markdown("""
     <div class='medium-font'>
     <b>Instruksi:</b><br>
-    1. Anda akan mengerjakan dua tugas aritmatika berturut-turut<br>
-    2. Tugas pertama: pengurangan serial 13 dari 1022 (5 menit)<br>
-    3. Tugas kedua: tes aritmatika MIST (5 menit)<br>
+    1. Anda akan mempersiapkan presentasi tentang "kelemahan diri" selama 3 menit<br>
+    2. Presentasikan di depan evaluator selama 5 menit<br>
+    3. Dilanjutkan dengan tugas aritmatika sulit (pengurangan serial 13 dari 1022)
     </div>
     """, unsafe_allow_html=True)
     
@@ -569,7 +569,7 @@ def tahap3_page():
     with col_btn[1]:
         if st.button("▶️ Mulai Tahap 3", key="start_tahap3"):
             st.session_state.current_condition = "Tahap 3"
-            st.session_state.page = "high_arithmetic"
+            st.session_state.page = "high_prep"
             st.rerun()
 
 def tahap4_page():
@@ -736,7 +736,7 @@ def feeling_evaluation_page():
         """, unsafe_allow_html=True)
         
         elapsed = time.time() - st.session_state.prep_start_time
-        prep_time_left = max(0, 6 - elapsed)
+        prep_time_left = max(0, 60 - elapsed)
         
         st.progress(min(elapsed/60, 1.0))
         st.markdown(f"### Waktu Persiapan Tersisa: {int(prep_time_left//60):02d}:{int(prep_time_left%60):02d}")
@@ -758,7 +758,7 @@ def feeling_evaluation_page():
         st.markdown("### Silakan sampaikan evaluasi Anda kepada evaluator")
         
         elapsed = time.time() - st.session_state.presentation_start_time
-        presentation_time_left = max(0, 1 - elapsed)
+        presentation_time_left = max(0, 180 - elapsed)
         
         st.progress(min(elapsed/180, 1.0))
         st.markdown(f"### Waktu Presentasi Tersisa: {int(presentation_time_left//60):02d}:{int(presentation_time_left%60):02d}")
@@ -786,8 +786,97 @@ def feeling_evaluation_page():
     # Auto refresh
     time.sleep(0.1)
     st.rerun()
+def high_prep_page():
+    st.title("📝 Persiapan Presentasi - Tahap 3")
+    st.markdown("---")
+    
+    if 'high_prep_start_time' not in st.session_state:
+        st.session_state.high_prep_start_time = time.time()
+    
+    elapsed = time.time() - st.session_state.high_prep_start_time
+    prep_time_left = max(0, 180 - elapsed)
+    
+    if 'high_presentation_topic' not in st.session_state:
+        st.session_state.high_presentation_topic = random.choice(["Kelemahan Anda"])
+    
+    st.markdown("### Topik Presentasi Anda:")
+    st.markdown(f"<div style='padding:10px; background-color:#ffcccb; border-radius:5px; color:#ff0000; font-size:24px; font-weight:bold;'>{st.session_state.high_presentation_topic}</div>", unsafe_allow_html=True)
+    
+    minutes, seconds = divmod(int(prep_time_left), 60)
+    st.markdown(f"### Waktu Persiapan: {minutes:02d}:{seconds:02d}")
+    
+    st.markdown("### Catatan Persiapan Anda:")
+    if 'high_presentation_notes' not in st.session_state:
+        st.session_state.high_presentation_notes = ""
+    
+    st.session_state.high_presentation_notes = st.text_area(
+        "Tulis catatan presentasi Anda di sini:",
+        value=st.session_state.high_presentation_notes,
+        height=300,
+        key="high_prep_notes",
+        label_visibility="collapsed"
+    )
+    
+    if prep_time_left <= 0:
+        col_btn = st.columns([1, 2, 1])
+        with col_btn[1]:
+            if st.button("➡️ Lanjut ke Presentasi", key="proceed_to_high_presentation"):
+                st.session_state.high_presentation_start_time = time.time()
+                st.session_state.page = "high_presentation"
+                st.rerun()
+    else:
+        time.sleep(0.1)
+        st.rerun()
 
-
+def high_presentation_page():
+    # Clear any remaining button state from preparation
+    if 'proceed_to_high_presentation' in st.session_state:
+        del st.session_state.proceed_to_high_presentation
+    
+    # Clear the page completely first
+    st.empty()
+    
+    st.title("🎤 Presentasi - Tahap 3")
+    st.markdown("---")
+    
+    if 'high_presentation_start_time' not in st.session_state:
+        st.session_state.high_presentation_start_time = time.time()
+    
+    elapsed = time.time() - st.session_state.high_presentation_start_time
+    presentation_time_left = max(0, 300 - elapsed)
+    
+    st.markdown("### Topik Presentasi Anda:")
+    st.markdown(f"<div style='padding:10px; background-color:#ffcccb; border-radius:5px; color:#ff0000; font-size:24px; font-weight:bold;'>{st.session_state.high_presentation_topic}</div>", unsafe_allow_html=True)
+    
+    minutes, seconds = divmod(int(presentation_time_left), 60)
+    st.markdown(f"### Waktu Presentasi: {minutes:02d}:{seconds:02d}")
+    
+    st.markdown("### Catatan Persiapan Anda:")
+    st.write(st.session_state.high_presentation_notes)
+    
+    if presentation_time_left <= 0:
+        st.session_state.page = "high_arithmetic"  # Langsung ke aritmatika tahap 3
+        st.rerun()
+    
+    # Add JavaScript to remove any remaining buttons
+    components.html(
+        """
+        <script>
+        // Remove any button elements that might remain
+        const buttons = window.parent.document.querySelectorAll('button');
+        buttons.forEach(button => {
+            if (button.textContent.includes('Lanjut ke Presentasi')) {
+                button.remove();
+            }
+        });
+        </script>
+        """,
+        height=0
+    )
+    
+    time.sleep(0.1)
+    st.rerun()
+    
     
 def high_arithmetic_page():
     if 'show_arithmetic_instructions' not in st.session_state:
@@ -1473,6 +1562,8 @@ def main():
         "music_instructions": music_instructions_page,
         "music_session": music_session_page,
         "feeling_evaluation": feeling_evaluation_page,
+        "high_prep": high_prep_page,
+        "high_presentation": high_presentation_page,
         "high_arithmetic": high_arithmetic_page,
         "cerita_setup": cerita_setup_page,
         "cerita": cerita_page,
