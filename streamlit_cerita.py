@@ -558,9 +558,9 @@ def tahap3_page():
     st.markdown("""
     <div class='medium-font'>
     <b>Instruksi:</b><br>
-    1. Anda akan mempersiapkan presentasi tentang "kelemahan diri" selama 3 menit<br>
-    2. Presentasikan di depan evaluator selama 5 menit<br>
-    3. Dilanjutkan dengan tugas aritmatika sulit (pengurangan serial 13 dari 1022)
+    1. Anda akan mengerjakan dua tugas aritmatika berturut-turut<br>
+    2. Tugas pertama: pengurangan serial 13 dari 1022 (5 menit)<br>
+    3. Tugas kedua: tes aritmatika MIST (5 menit)<br>
     </div>
     """, unsafe_allow_html=True)
     
