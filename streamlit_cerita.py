@@ -2005,9 +2005,5 @@ def main():
     pages[st.session_state.page]()
 
 if __name__ == "__main__":
-    try:
-        import docx
-    except ImportError:
-        st.error("Modul python-docx tidak terinstall. Silakan install dengan 'pip install python-docx'")
-    
+    # Hapus pengecekan docx di sini karena sudah dipindahkan ke bagian import
     main()
