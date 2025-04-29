@@ -5,6 +5,8 @@ import re
 import os
 import base64
 import time
+import io
+import numpy as np
 from datetime import datetime
 import streamlit.components.v1 as components
 
@@ -313,6 +315,23 @@ def save_session_results(condition):
                 result_data[f"Tugas_Aritmatika_{i+1}_Benar"] = item['correct']
                 if not item['correct']:
                     result_data[f"Tugas_Aritmatika_{i+1}_Jawaban_Benar"] = item.get('correct_answer', '')
+        
+        # Tambahkan data dari MIST jika tersedia
+        if 'mist_results' in st.session_state:
+            result_data["MIST_Total_Soal"] = st.session_state.mist_results['total_questions']
+            result_data["MIST_Jawaban_Benar"] = st.session_state.mist_results['correct_answers']
+            result_data["MIST_Jawaban_Salah"] = st.session_state.mist_results['incorrect_answers']
+            result_data["MIST_Rata_Waktu_Respons"] = round(st.session_state.mist_results['average_response_time'], 2)
+            result_data["MIST_Level_Akhir"] = st.session_state.mist_results['final_difficulty_level']
+            
+            # Tambahkan riwayat soal MIST
+            if 'history' in st.session_state.mist_results:
+                for i, item in enumerate(st.session_state.mist_results['history']):
+                    result_data[f"MIST_Soal_{i+1}"] = item['question']
+                    result_data[f"MIST_Jawaban_{i+1}"] = item['user_answer']
+                    result_data[f"MIST_Benar_{i+1}"] = item['correct']
+                    result_data[f"MIST_Waktu_Respons_{i+1}"] = round(item['response_time'], 2)
+                    result_data[f"MIST_Level_{i+1}"] = item['difficulty_level']
     
     if condition == "Tahap 4":
         result_data["Jenis_Relaksasi"] = "PMR dan Musik"
@@ -411,9 +430,14 @@ def data_diri_page():
                 }
                 st.session_state.page = "tahap1"
                 st.rerun()
+
 def rest_timer_page():
-    # Clear all arithmetic-related states and form elements
+    # Completely reset the page first
+    st.empty()
+    
+    # Clear all MIST and arithmetic state variables
     keys_to_clear = [
+        # Existing arithmetic keys
         'arithmetic_problems', 
         'current_problem', 
         'answers', 
@@ -424,42 +448,124 @@ def rest_timer_page():
         'high_arithmetic_history',
         'high_arithmetic_attempts',
         'high_arithmetic_correct_count',
-        'answer_form',  # Clear form state
-        'answer_0',     # Clear input state
-        'answer_1',     # Clear input state (and so on)
+        'answer_form',
+        'answer_0',
+        'answer_1',
+        
+        # MIST-related keys - complete list
+        'mist_initialized',
+        'current_question',
+        'current_answer',
+        'correct_answer',
+        'response_status',
+        'question_start_time',
+        'question_time_limit',
+        'total_elapsed_time',
+        'start_time',
+        'last_update_time',
+        'last_sound_time',
+        'should_clear_response',
+        'show_response_until',
+        'consecutive_correct',
+        'consecutive_incorrect',
+        'difficulty_level',
+        'response_times',
+        'average_response_time',
+        'fake_average_correct_rate',
+        'user_correct_rate',
+        'game_over',
+        'MIST_TOTAL_DURATION',
+        'correct_answers',
+        'incorrect_answers',
+        'total_questions',
+        'mist_history'
     ]
     
-    # Clear all form-related components
+    # Remove all keys from session state
+    for key in keys_to_clear:
+        if key in st.session_state:
+            del st.session_state[key]
+    
+    # Use safer JavaScript to clean up UI elements
     components.html(
         """
         <script>
-        // Remove any remaining form elements
-        const forms = window.parent.document.querySelectorAll('form');
-        forms.forEach(form => form.remove());
+        // Use a safer approach to clean elements - hide them instead of removing
+        function safeCleanup() {
+            try {
+                // Hide elements rather than removing them
+                const elementsToHide = window.parent.document.querySelectorAll(
+                    '.stProgress, .stButton, .stTextInput, .stNumberInput, ' +
+                    '.big-font, .answer-font, .result-correct, .result-incorrect, ' +
+                    '.stMetric'
+                );
+                
+                elementsToHide.forEach(el => {
+                    if (el && el.style) {
+                        el.style.display = 'none';
+                    }
+                });
+                
+                // Stop any audio that might be playing
+                const audioElements = window.parent.document.querySelectorAll('audio');
+                audioElements.forEach(audio => {
+                    if (audio) {
+                        audio.pause();
+                        if (audio.parentNode) {
+                            try {
+                                audio.parentNode.removeChild(audio);
+                            } catch (e) {
+                                // Just hide it if we can't remove it
+                                audio.style.display = 'none';
+                            }
+                        }
+                    }
+                });
+                
+                // Try to reset any forms
+                const forms = window.parent.document.querySelectorAll('form');
+                forms.forEach(form => {
+                    if (form) {
+                        try {
+                            form.reset();
+                        } catch (e) {
+                            // If reset fails, try to hide
+                            if (form.style) {
+                                form.style.display = 'none';
+                            }
+                        }
+                    }
+                });
+                
+                console.log("Cleanup completed successfully");
+            } catch (e) {
+                console.log("Cleanup error:", e);
+            }
+        }
+        
+        // Execute the cleanup
+        safeCleanup();
         </script>
         """,
         height=0
     )
     
-    for key in keys_to_clear:
-        if key in st.session_state:
-            del st.session_state[key]
+    # Wait a tiny bit to ensure everything is processed
+    time.sleep(0.1)
     
-    # Clear the page completely
-    st.empty()
-    
+    # Start fresh with a new page
     st.title("⏳ Waktu Istirahat")
     st.markdown("---")
     
-    # Initialize timer state
+    # Inisialisasi state timer
     if 'rest_start_time' not in st.session_state:
         st.session_state.rest_start_time = time.time()
         st.session_state.timer_finished = False
     
-    # Calculate remaining time
+    # Hitung waktu yang tersisa
     current_time = time.time()
     elapsed = current_time - st.session_state.rest_start_time
-    time_left = max(0, 60 - elapsed)  
+    time_left = max(0, 60 - elapsed)  # 10 detik istirahat
     
     st.markdown("""
     <div class='medium-font'>
@@ -471,31 +577,31 @@ def rest_timer_page():
     progress = min(elapsed / 60, 1.0)  
     st.progress(progress)
     
-    # Display remaining time
+    # Tampilkan waktu tersisa
     minutes = int(time_left // 60)
     seconds = int(time_left % 60)
     time_display = st.empty()
     time_display.markdown(f"### Waktu Istirahat Tersisa: {minutes:02d}:{seconds:02d}")
     
-    # Container for the button - will only be filled when timer is done
+    # Container untuk tombol - hanya diisi ketika timer selesai
     button_container = st.empty()
     
     if time_left <= 0:
         st.session_state.timer_finished = True
         time_display.markdown("### Waktu istirahat telah habis!")
         
-        # Only now we add the button to the container
+        # Sekarang kita tambahkan tombol ke container
         with button_container.container():
             col_btn = st.columns([1, 2, 1])
             with col_btn[1]:
                 if st.button("➡️ Lanjut ke Kuesioner", key="next_after_rest"):
-                    # Clear timer state
+                    # Bersihkan state timer
                     keys_to_clear = ['rest_start_time', 'timer_finished']
                     for key in keys_to_clear:
                         if key in st.session_state:
                             del st.session_state[key]
                     
-                    # Determine next page based on current condition
+                    # Tentukan halaman berikutnya berdasarkan kondisi saat ini
                     if st.session_state.current_condition == "Tahap 1":
                         st.session_state.page = "dass21"
                     else:
@@ -558,18 +664,19 @@ def tahap3_page():
     st.markdown("""
     <div class='medium-font'>
     <b>Instruksi:</b><br>
-    1. Anda akan mempersiapkan presentasi tentang "kelemahan diri" selama 3 menit<br>
-    2. Presentasikan di depan evaluator selama 5 menit<br>
-    3. Dilanjutkan dengan tugas aritmatika sulit (pengurangan serial 13 dari 1022)
+    1. Anda akan mengerjakan tugas aritmatika sulit (pengurangan serial 13 dari 1022)<br>
+    2. Dilanjutkan dengan simulasi MIST (Mental Improvement through Speed Training)
     </div>
     """, unsafe_allow_html=True)
     
     st.markdown("---")
+    
+    
     col_btn = st.columns([1, 2, 1])
     with col_btn[1]:
         if st.button("▶️ Mulai Tahap 3", key="start_tahap3"):
             st.session_state.current_condition = "Tahap 3"
-            st.session_state.page = "high_prep"
+            st.session_state.page = "high_arithmetic"
             st.rerun()
 
 def tahap4_page():
@@ -642,7 +749,7 @@ def pmr_session_page():
             st.session_state.pmr_start_time = time.time()
         
         elapsed = time.time() - st.session_state.pmr_start_time
-        time_left = max(0, 270 - elapsed)  # 4 menit 30 detik = 270 detik
+        time_left = max(0, 260 - elapsed)  # 4 menit 30 detik = 270 detik
         
         # Progress bar
         st.progress(min(elapsed/270, 1.0))
@@ -694,7 +801,7 @@ def music_session_page():
     st.audio(audio_bytes, format='audio/mp3', start_time=0)
     
     elapsed = time.time() - st.session_state.music_start_time
-    time_left = max(0, 330 - elapsed)  # 5 menit = 300 detik
+    time_left = max(0, 310 - elapsed)  # 5 menit = 300 detik
     
     # Progress bar
     st.progress(min(elapsed/330, 1.0))
@@ -736,7 +843,7 @@ def feeling_evaluation_page():
         """, unsafe_allow_html=True)
         
         elapsed = time.time() - st.session_state.prep_start_time
-        prep_time_left = max(0, 60 - elapsed)
+        prep_time_left = max(0, 65 - elapsed)
         
         st.progress(min(elapsed/60, 1.0))
         st.markdown(f"### Waktu Persiapan Tersisa: {int(prep_time_left//60):02d}:{int(prep_time_left%60):02d}")
@@ -786,98 +893,8 @@ def feeling_evaluation_page():
     # Auto refresh
     time.sleep(0.1)
     st.rerun()
-def high_prep_page():
-    st.title("📝 Persiapan Presentasi - Tahap 3")
-    st.markdown("---")
-    
-    if 'high_prep_start_time' not in st.session_state:
-        st.session_state.high_prep_start_time = time.time()
-    
-    elapsed = time.time() - st.session_state.high_prep_start_time
-    prep_time_left = max(0, 180 - elapsed)
-    
-    if 'high_presentation_topic' not in st.session_state:
-        st.session_state.high_presentation_topic = random.choice(["Kelemahan Anda"])
-    
-    st.markdown("### Topik Presentasi Anda:")
-    st.markdown(f"<div style='padding:10px; background-color:#ffcccb; border-radius:5px; color:#ff0000; font-size:24px; font-weight:bold;'>{st.session_state.high_presentation_topic}</div>", unsafe_allow_html=True)
-    
-    minutes, seconds = divmod(int(prep_time_left), 60)
-    st.markdown(f"### Waktu Persiapan: {minutes:02d}:{seconds:02d}")
-    
-    st.markdown("### Catatan Persiapan Anda:")
-    if 'high_presentation_notes' not in st.session_state:
-        st.session_state.high_presentation_notes = ""
-    
-    st.session_state.high_presentation_notes = st.text_area(
-        "Tulis catatan presentasi Anda di sini:",
-        value=st.session_state.high_presentation_notes,
-        height=300,
-        key="high_prep_notes",
-        label_visibility="collapsed"
-    )
-    
-    if prep_time_left <= 0:
-        col_btn = st.columns([1, 2, 1])
-        with col_btn[1]:
-            if st.button("➡️ Lanjut ke Presentasi", key="proceed_to_high_presentation"):
-                st.session_state.high_presentation_start_time = time.time()
-                st.session_state.page = "high_presentation"
-                st.rerun()
-    else:
-        time.sleep(0.1)
-        st.rerun()
 
-def high_presentation_page():
-    # Clear any remaining button state from preparation
-    if 'proceed_to_high_presentation' in st.session_state:
-        del st.session_state.proceed_to_high_presentation
-    
-    # Clear the page completely first
-    st.empty()
-    
-    st.title("🎤 Presentasi - Tahap 3")
-    st.markdown("---")
-    
-    if 'high_presentation_start_time' not in st.session_state:
-        st.session_state.high_presentation_start_time = time.time()
-    
-    elapsed = time.time() - st.session_state.high_presentation_start_time
-    presentation_time_left = max(0, 300 - elapsed)
-    
-    st.markdown("### Topik Presentasi Anda:")
-    st.markdown(f"<div style='padding:10px; background-color:#ffcccb; border-radius:5px; color:#ff0000; font-size:24px; font-weight:bold;'>{st.session_state.high_presentation_topic}</div>", unsafe_allow_html=True)
-    
-    minutes, seconds = divmod(int(presentation_time_left), 60)
-    st.markdown(f"### Waktu Presentasi: {minutes:02d}:{seconds:02d}")
-    
-    st.markdown("### Catatan Persiapan Anda:")
-    st.write(st.session_state.high_presentation_notes)
-    
-    if presentation_time_left <= 0:
-        st.session_state.page = "high_arithmetic"  # Langsung ke aritmatika tahap 3
-        st.rerun()
-    
-    # Add JavaScript to remove any remaining buttons
-    components.html(
-        """
-        <script>
-        // Remove any button elements that might remain
-        const buttons = window.parent.document.querySelectorAll('button');
-        buttons.forEach(button => {
-            if (button.textContent.includes('Lanjut ke Presentasi')) {
-                button.remove();
-            }
-        });
-        </script>
-        """,
-        height=0
-    )
-    
-    time.sleep(0.1)
-    st.rerun()
-    
-    
+
 def high_arithmetic_page():
     if 'show_arithmetic_instructions' not in st.session_state:
         st.session_state.show_arithmetic_instructions = True
@@ -924,11 +941,517 @@ def high_arithmetic_page():
     st.progress(progress)
     
     if time_left <= 0:
-        st.session_state.page = "rest_timer"
+        # Arahkan ke halaman instruksi MIST terlebih dahulu
+        st.session_state.page = "mist_instructions"
         st.rerun()
     
     time.sleep(0.1)
     st.rerun()
+
+def mist_instructions_page():
+    st.title("🧠 Instruksi MIST - Simulasi Aritmatika")
+    st.markdown("---")
+    
+    st.markdown("""
+    <div class='medium-font'>
+    <b>Instruksi Simulasi MIST:</b><br>
+    1. Anda akan diberikan soal-soal aritmatika dengan tingkat kesulitan yang meningkat.<br>
+    2. Jawablah secepat dan seakurat mungkin dengan menggunakan keypad di bawah.<br>
+    3. Perhatikan batas waktu untuk tiap soal (ditampilkan dengan progress bar).<br>
+    4. Semakin banyak jawaban benar, semakin sulit soal berikutnya.<br>
+    5. Simulasi akan berlangsung selama 3 menit.
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # More detailed explanation of MIST
+    st.markdown("""
+    <div style='background-color:#f0f2f6; padding:15px; border-radius:10px; margin-top:20px; margin-bottom:20px;'>
+    <h4>Tentang Simulasi MIST:</h4>
+    <p>MIST (Mental Improvement through Speed Training) adalah simulasi tugas aritmatika dengan kondisi berikut:</p>
+    <ul>
+      <li>Anda akan diberikan soal aritmatika dengan tingkat kesulitan yang meningkat</li>
+      <li>Ada batas waktu untuk menjawab setiap soal</li>
+      <li>Semakin banyak soal yang Anda jawab dengan benar, semakin sulit soal selanjutnya</li>
+      <li>Jika waktu habis sebelum Anda menjawab, soal dianggap salah</li>
+      <li>Performa Anda akan dibandingkan dengan rata-rata peserta lain</li>
+      <li>Durasi simulasi adalah 3 menit</li>
+    </ul>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    col_btn = st.columns([1, 2, 1])
+    with col_btn[1]:
+        if st.button("▶️ Mulai Simulasi MIST", key="start_mist_simulation"):
+            st.session_state.page = "mist_simulation"
+            st.rerun()
+
+def mist_simulation_page():
+    st.title("🧠 MIST - Simulasi Aritmatika")
+    st.markdown("---")
+    
+    # CSS untuk meningkatkan tampilan
+    st.markdown("""
+    <style>
+        .stButton>button {
+            width: 100%;
+            height: 50px;
+            font-size: 20px;
+        }
+        .big-font {
+            font-size: 30px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .answer-font {
+            font-size: 24px;
+            text-align: center;
+            padding: 10px;
+            color: blue;
+        }
+        .result-correct {
+            color: green;
+            font-size: 28px;
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+        }
+        .result-incorrect {
+            color: red;
+            font-size: 28px;
+            text-align: center;
+            padding: 10px;
+            font-weight: bold;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Inisialisasi variabel session state jika belum ada
+    if 'mist_initialized' not in st.session_state:
+        st.session_state.mist_initialized = True
+        st.session_state.current_question = ""
+        st.session_state.current_answer = ""
+        st.session_state.correct_answer = ""
+        st.session_state.response_status = None
+        st.session_state.question_start_time = time.time()
+        st.session_state.question_time_limit = 10  # Batas waktu awal (detik)
+        st.session_state.total_elapsed_time = 0
+        st.session_state.start_time = time.time()
+        st.session_state.last_update_time = time.time()
+        st.session_state.correct_answers = 0
+        st.session_state.incorrect_answers = 0
+        st.session_state.total_questions = 0
+        st.session_state.consecutive_correct = 0
+        st.session_state.consecutive_incorrect = 0
+        st.session_state.difficulty_level = 1
+        st.session_state.response_times = []
+        st.session_state.average_response_time = 5  # Rata-rata awal (detik)
+        st.session_state.show_response_until = 0
+        st.session_state.fake_average_correct_rate = 0.75  # 75% tingkat kebenaran untuk "subjek lain"
+        st.session_state.user_correct_rate = 0
+        st.session_state.game_over = False
+        st.session_state.should_clear_response = False
+        
+        # Durasi total dalam detik (3 menit)
+        st.session_state.MIST_TOTAL_DURATION = 300
+        st.session_state.last_sound_time = 0  # Melacak kapan terakhir kali kita memainkan suara
+    
+    # Fungsi untuk membuat suara metronom
+    def get_metronome_sound(fast=False):
+        # Membuat suara yang lebih menarik perhatian
+        sample_rate = 44100
+        
+        if fast:
+            # Suara lebih cepat, pitch lebih tinggi untuk urgensi
+            duration = 0.08  # Durasi lebih pendek
+            frequency = 880  # Pitch lebih tinggi (nada A5)
+            
+            # Membuat tone awal
+            t = np.linspace(0, duration, int(sample_rate * duration), False)
+            tone = np.sin(2 * np.pi * frequency * t)
+            
+            # Menambahkan sedikit penurunan pitch di akhir untuk lebih urgen
+            end_duration = 0.02
+            end_t = np.linspace(0, end_duration, int(sample_rate * end_duration), False)
+            end_tone = np.sin(2 * np.pi * (frequency*0.9) * end_t)
+            
+            # Menggabungkan tone dengan sedikit penurunan volume
+            tone = np.concatenate([tone * 0.8, end_tone * 0.6])
+        else:
+            # Suara metronom biasa
+            duration = 0.1  # 100ms
+            frequency = 660  # Nada E5
+            
+            # Membuat tone dengan sedikit attack dan decay
+            t = np.linspace(0, duration, int(sample_rate * duration), False)
+            tone = np.sin(2 * np.pi * frequency * t)
+            
+            # Terapkan envelope untuk suara yang lebih baik (attack dan decay)
+            envelope = np.ones_like(tone)
+            attack_samples = int(0.01 * sample_rate)  # 10ms attack
+            decay_samples = int(0.05 * sample_rate)   # 50ms decay
+            
+            # Attack (fade in)
+            envelope[:attack_samples] = np.linspace(0, 1, attack_samples)
+            # Decay (fade out)
+            envelope[-decay_samples:] = np.linspace(1, 0, decay_samples)
+            
+            tone = tone * envelope * 0.7  # Terapkan envelope dan sesuaikan volume
+        
+        # Konversi ke data 16-bit
+        audio_data = (tone * 32767).astype(np.int16)
+        
+        # Buat file WAV di memori
+        import wave
+        buffer = io.BytesIO()
+        with wave.open(buffer, 'wb') as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(sample_rate)
+            wf.writeframes(audio_data.tobytes())
+        
+        # Dapatkan konten file WAV dan encode sebagai base64
+        buffer.seek(0)
+        audio_base64 = base64.b64encode(buffer.read()).decode('utf-8')
+        audio_html = f'<audio autoplay="true"><source src="data:audio/wav;base64,{audio_base64}" type="audio/wav"></audio>'
+        return audio_html
+    
+    # Fungsi untuk menghasilkan pertanyaan baru
+    def generate_question():
+        # Bersihkan status respons sebelum menghasilkan pertanyaan baru
+        st.session_state.response_status = None
+        st.session_state.should_clear_response = True
+        
+        st.session_state.total_questions += 1
+        
+        if st.session_state.difficulty_level == 1:
+            # Level 1: Penambahan/pengurangan sederhana
+            num1 = random.randint(1, 99)
+            num2 = random.randint(1, 99)
+            operator = random.choice(['+', '-'])
+            
+            if operator == '+':
+                result = num1 + num2
+            else:  # operator == '-'
+                # Pastikan hasilnya positif
+                if num1 < num2:
+                    num1, num2 = num2, num1
+                result = num1 - num2
+                
+            st.session_state.current_question = f"{num1} {operator} {num2} = ?"
+            st.session_state.correct_answer = str(result)
+            
+        elif st.session_state.difficulty_level == 2:
+            # Level 2: Dua operasi
+            num1 = random.randint(2, 20)
+            num2 = random.randint(2, 10)
+            num3 = random.randint(1, 20)
+            operators = random.sample(['+', '-', '*'], 2)
+            
+            # Buat persamaan yang menghasilkan bilangan bulat positif
+            equation = f"{num1} {operators[0]} {num2} {operators[1]} {num3}"
+            result = eval(equation)  # Aman di sini karena kita mengontrol input
+            
+            st.session_state.current_question = f"{equation} = ?"
+            st.session_state.correct_answer = str(result)
+            
+        else:  # difficulty_level == 3
+            # Level 3: Tiga operasi
+            num1 = random.randint(2, 15)
+            num2 = random.randint(2, 10)
+            num3 = random.randint(2, 8)
+            num4 = random.randint(2, 5)
+            operators = random.sample(['+', '-', '*'], 3)
+            
+            # Buat ekspresi yang aman
+            expression = f"{num1} {operators[0]} {num2} {operators[1]} {num3} {operators[2]} {num4}"
+            
+            try:
+                # Menggunakan eval dengan aman untuk aritmatika saja
+                result = eval(expression)
+                if result < 0 or not isinstance(result, int):
+                    # Jika bukan bilangan bulat positif, coba lagi
+                    return generate_question()
+                    
+                st.session_state.current_question = f"{expression} = ?"
+                st.session_state.correct_answer = str(result)
+            except:
+                # Jika terjadi kesalahan, coba lagi
+                return generate_question()
+        
+        # Reset input jawaban dan timer
+        st.session_state.current_answer = ""
+        st.session_state.question_start_time = time.time()
+        st.session_state.last_sound_time = 0  # Reset waktu suara
+    
+    # Fungsi untuk menyesuaikan kesulitan
+    def adjust_difficulty():
+        if st.session_state.total_questions > 5:
+            correct_rate = st.session_state.correct_answers / st.session_state.total_questions
+            if correct_rate > 0.8 and st.session_state.difficulty_level < 3:
+                st.session_state.difficulty_level += 1
+            elif correct_rate < 0.3 and st.session_state.difficulty_level > 1:
+                st.session_state.difficulty_level -= 1
+    
+    # Fungsi untuk menyesuaikan batas waktu
+    def adjust_time_limit():
+        if st.session_state.consecutive_correct >= 3:
+            # Kurangi waktu sebesar 10%
+            st.session_state.question_time_limit = max(2, st.session_state.question_time_limit * 0.9)
+            st.session_state.consecutive_correct = 0
+        elif st.session_state.consecutive_incorrect >= 3:
+            # Tingkatkan waktu sebesar 10%
+            st.session_state.question_time_limit *= 1.1
+            st.session_state.consecutive_incorrect = 0
+    
+    # Fungsi untuk memperbarui metrik kinerja
+    def update_performance_metrics(response_time, correct):
+        st.session_state.response_times.append(response_time)
+        st.session_state.average_response_time = sum(st.session_state.response_times) / len(st.session_state.response_times)
+        
+        if correct:
+            st.session_state.correct_answers += 1
+            st.session_state.consecutive_correct += 1
+            st.session_state.consecutive_incorrect = 0
+        else:
+            st.session_state.incorrect_answers += 1
+            st.session_state.consecutive_incorrect += 1
+            st.session_state.consecutive_correct = 0
+        
+        st.session_state.user_correct_rate = st.session_state.correct_answers / max(1, st.session_state.total_questions)
+        adjust_time_limit()
+        adjust_difficulty()
+    
+    # Fungsi untuk mengirimkan jawaban
+    def submit_answer():
+        response_time = time.time() - st.session_state.question_start_time
+        
+        if st.session_state.current_answer == st.session_state.correct_answer:
+            st.session_state.response_status = "Benar"
+            update_performance_metrics(response_time, True)
+        else:
+            st.session_state.response_status = "Salah"
+            update_performance_metrics(response_time, False)
+        
+        # Tampilkan respons selama 1.5 detik
+        st.session_state.show_response_until = time.time() + 1.5
+        st.session_state.should_clear_response = False
+        
+        # Simpan hasil untuk riwayat aritmatika
+        if 'mist_history' not in st.session_state:
+            st.session_state.mist_history = []
+            
+        st.session_state.mist_history.append({
+            'question': st.session_state.current_question,
+            'user_answer': st.session_state.current_answer,
+            'correct_answer': st.session_state.correct_answer,
+            'correct': st.session_state.current_answer == st.session_state.correct_answer,
+            'response_time': response_time,
+            'difficulty_level': st.session_state.difficulty_level
+        })
+    
+    # Hasilkan pertanyaan pertama jika diperlukan
+    if not st.session_state.current_question:
+        generate_question()
+    
+    # Perbarui waktu yang telah berlalu
+    current_time = time.time()
+    time_delta = current_time - st.session_state.last_update_time
+    st.session_state.total_elapsed_time += time_delta
+    st.session_state.last_update_time = current_time
+    
+    # Tampilkan progress bar
+    progress = min(1.0, st.session_state.total_elapsed_time / st.session_state.MIST_TOTAL_DURATION)
+    st.progress(progress)
+    
+    # Waktu tersisa
+    time_left = max(0, st.session_state.MIST_TOTAL_DURATION - st.session_state.total_elapsed_time)
+    st.write(f"**Waktu Tersisa:** {int(time_left)}s")
+    
+    # Periksa game over
+    if time_left <= 0 and not st.session_state.game_over:
+        st.session_state.game_over = True
+        # Simpan hasil MIST ke session state
+        if 'mist_results' not in st.session_state:
+            st.session_state.mist_results = {
+                'correct_answers': st.session_state.correct_answers,
+                'incorrect_answers': st.session_state.incorrect_answers,
+                'total_questions': st.session_state.total_questions,
+                'average_response_time': st.session_state.average_response_time,
+                'final_difficulty_level': st.session_state.difficulty_level,
+                'history': st.session_state.mist_history if 'mist_history' in st.session_state else []
+            }
+        # Lanjut ke halaman berikutnya setelah selesai
+        st.session_state.page = "rest_timer"
+        st.rerun()
+    
+    # Hitung timer pertanyaan saat ini
+    question_elapsed = current_time - st.session_state.question_start_time
+    remaining_time = max(0, st.session_state.question_time_limit - question_elapsed)
+    
+    # Periksa waktu habis untuk pertanyaan saat ini
+    if remaining_time <= 0 and st.session_state.response_status is None:
+        st.session_state.response_status = "Waktu Habis"
+        update_performance_metrics(st.session_state.question_time_limit, False)
+        st.session_state.show_response_until = current_time + 1.5
+        st.session_state.should_clear_response = False
+        
+        # Simpan hasil untuk pertanyaan yang waktu habis
+        if 'mist_history' not in st.session_state:
+            st.session_state.mist_history = []
+            
+        st.session_state.mist_history.append({
+            'question': st.session_state.current_question,
+            'user_answer': "Tidak menjawab",
+            'correct_answer': st.session_state.correct_answer,
+            'correct': False,
+            'response_time': st.session_state.question_time_limit,
+            'difficulty_level': st.session_state.difficulty_level
+        })
+    
+    # Tampilan timer pertanyaan
+    timer_progress = max(0, min(1.0, remaining_time / st.session_state.question_time_limit))
+    st.write(f"**Timer Pertanyaan:** {remaining_time:.1f}s")
+    timer_color = "green" if timer_progress > 0.5 else "yellow" if timer_progress > 0.25 else "red"
+    st.progress(timer_progress)
+    
+    # Logika suara metronom
+    sound_container = st.empty()
+    if st.session_state.response_status is None and not st.session_state.game_over:
+        play_sound = False
+        sound_interval = 1.0  # Interval default (1 detik)
+        
+        # Sesuaikan frekuensi suara berdasarkan waktu yang tersisa
+        if remaining_time < 3:
+            # Tempo cepat ketika waktu hampir habis (4 kali per detik)
+            sound_interval = 0.25
+            if current_time - st.session_state.last_sound_time >= sound_interval:
+                play_sound = True
+                # Gunakan suara urgen ketika waktu < 3 detik
+                sound_container.markdown(get_metronome_sound(fast=True), unsafe_allow_html=True)
+                st.session_state.last_sound_time = current_time
+        elif remaining_time < 5:
+            # Tempo sedang (2 kali per detik)
+            sound_interval = 0.5
+            if current_time - st.session_state.last_sound_time >= sound_interval:
+                play_sound = True
+                # Gunakan suara lebih urgen ketika waktu < 5 detik
+                sound_container.markdown(get_metronome_sound(fast=True), unsafe_allow_html=True)
+                st.session_state.last_sound_time = current_time
+        else:
+            # Tempo normal (1 kali per detik)
+            sound_interval = 1.0
+            if current_time - st.session_state.last_sound_time >= sound_interval:
+                play_sound = True
+                # Gunakan suara metronom normal
+                sound_container.markdown(get_metronome_sound(fast=False), unsafe_allow_html=True)
+                st.session_state.last_sound_time = current_time
+    
+    # Buat placeholder untuk umpan balik di tingkat atas
+    question_display = st.empty()
+    answer_display = st.empty()
+    feedback_display = st.empty() 
+    correct_answer_display = st.empty()
+    
+    # Bagian konten game
+    if not st.session_state.game_over:
+        # Tampilkan pertanyaan
+        question_display.markdown(f'<div class="big-font">{st.session_state.current_question}</div>', unsafe_allow_html=True)
+        
+        # Tampilkan jawaban saat ini
+        answer_display.markdown(f'<div class="answer-font">Jawaban: {st.session_state.current_answer}</div>', unsafe_allow_html=True)
+        
+        # Tangani pesan respons (benar/salah)
+        if st.session_state.response_status:
+            if current_time < st.session_state.show_response_until:
+                result_class = "result-correct" if st.session_state.response_status == "Benar" else "result-incorrect"
+                feedback_display.markdown(f'<div class="{result_class}">{st.session_state.response_status}</div>', unsafe_allow_html=True)
+                
+                # Tampilkan jawaban yang benar jika salah
+                if st.session_state.response_status == "Salah" or st.session_state.response_status == "Waktu Habis":
+                    correct_answer_display.markdown(f'<div class="answer-font">Jawaban benar: {st.session_state.correct_answer}</div>', unsafe_allow_html=True)
+            else:
+                # Bersihkan tampilan umpan balik ketika waktu habis
+                feedback_display.empty()
+                correct_answer_display.empty()
+                
+                # Saatnya menampilkan pertanyaan baru
+                generate_question()
+                st.rerun()
+        elif st.session_state.should_clear_response:
+            # Bersihkan umpan balik pada pertanyaan baru
+            feedback_display.empty()
+            correct_answer_display.empty()
+            st.session_state.should_clear_response = False
+        
+        # Input angka
+        keypad_container = st.container()
+        
+        if st.session_state.response_status is None:
+            with keypad_container:
+                # Buat keypad horizontal yang lebih ringkas
+                col1, col2, col3 = st.columns([3, 1, 1])
+                
+                with col1:
+                    # Buat satu baris dengan semua digit
+                    cols = st.columns(10)  # Lebih banyak kolom untuk layout horizontal
+                    
+                    # Tambahkan digit 0-9 dalam satu baris
+                    for i in range(10):
+                        with cols[i]:
+                            if st.button(f"{i}", key=f"num_{i}", use_container_width=True):
+                                st.session_state.current_answer += str(i)
+                
+                # Tambahkan backspace dan submit
+                with col2:
+                    if st.button("⌫", key="backspace", use_container_width=True):
+                        if st.session_state.current_answer:
+                            st.session_state.current_answer = st.session_state.current_answer[:-1]
+                
+                with col3:
+                    if st.button("✓", key="submit", type="primary", use_container_width=True):
+                        if st.session_state.current_answer:
+                            submit_answer()
+    else:
+        # Tampilan game over
+        question_display.write("# Tes Selesai")
+        answer_display.write(f"## Skor Akhir Anda: {st.session_state.correct_answers}/{st.session_state.total_questions}")
+        feedback_display.write("Selamat! Anda telah menyelesaikan simulasi MIST.")
+        
+        col_btn = st.columns([1, 2, 1])
+        with col_btn[1]:
+            if st.button("➡️ Lanjutkan ke Tahap Berikutnya", use_container_width=True):
+                # Lanjut ke halaman berikutnya
+                st.session_state.page = "rest_timer"
+                st.rerun()
+    
+    # Metrik kinerja
+    metrics_container = st.container()
+    
+    with metrics_container:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            your_score = int(st.session_state.user_correct_rate * 100)
+            st.progress(st.session_state.user_correct_rate)
+            st.write(f"Performa Anda: {your_score}%")
+            
+            avg_score = int(st.session_state.fake_average_correct_rate * 100)
+            st.progress(st.session_state.fake_average_correct_rate)
+            st.write(f"Performa Rata-rata: {avg_score}%")
+        
+        with col2:
+            st.write(f"**Skor:** {st.session_state.correct_answers}/{st.session_state.total_questions}")
+            st.write(f"**Level:** {st.session_state.difficulty_level}")
+            st.write(f"**Waktu Respons Rata-rata:** {st.session_state.average_response_time:.1f}s")
+    
+    # Auto-refresh untuk pembaruan timer
+    if not st.session_state.game_over:
+        # Gunakan container untuk refresh untuk menghindari duplikasi elemen
+        refresh_container = st.empty()
+        time.sleep(0.1)  # Sedikit penundaan untuk mengurangi penggunaan CPU
+        st.rerun()
+
 
 def cerita_setup_page():
     st.title(f"⚙️ Pengaturan - {st.session_state.current_condition}")
@@ -1490,7 +2013,7 @@ def hasil_page():
                         st.write(f"- Nama: {result['Nama']}")
                         st.write(f"- Umur: {result['Umur']}")
                         st.write(f"- Jenis Kelamin: {result['Jenis Kelamin']}")
-                        st.write(f"- Terakhir Minum Kopi: {result['Terakhir Minum Kopi (jam)']} jam yang lalu")
+                        st.write(f"- Terakhir Minum Kopi: {result['Terakhir Minum Kopi (jam)']}")
                         st.write(f"- Durasi Tidur: {result['Durasi Tidur (jam)']} jam")
                     with col2:
                         st.markdown("**Hasil Tes:**")
@@ -1514,10 +2037,42 @@ def hasil_page():
                             st.write(f"- Topik Presentasi: {result['Topik Presentasi']}")
                             if "Jumlah Percobaan Aritmatika" in result:
                                 st.write(f"- Percobaan Aritmatika: {result['Jumlah Percobaan Aritmatika']}")
+                            
+                            # Tambahkan hasil MIST untuk Tahap 3
+                            if "MIST_Total_Soal" in result:
+                                st.markdown("**Hasil MIST:**")
+                                st.write(f"- Total Soal: {result['MIST_Total_Soal']}")
+                                st.write(f"- Jawaban Benar: {result['MIST_Jawaban_Benar']}")
+                                st.write(f"- Jawaban Salah: {result['MIST_Jawaban_Salah']}")
+                                st.write(f"- Tingkat Akurasi: {round((result['MIST_Jawaban_Benar'] / result['MIST_Total_Soal']) * 100, 2)}%")
+                                st.write(f"- Rata-rata Waktu Respons: {result['MIST_Rata_Waktu_Respons']} detik")
+                                st.write(f"- Level Kesulitan Akhir: {result['MIST_Level_Akhir']}")
                         
                         if condition == "Tahap 4" and "Jenis_Relaksasi" in result:
                             st.write(f"- Jenis Relaksasi: {result['Jenis_Relaksasi']}")
                             st.write(f"- Durasi Relaksasi: {result['Durasi_Relaksasi']}")
+                    
+                    # Tampilkan detail MIST jika tersedia dan ini adalah Tahap 3
+                    if condition == "Tahap 3" and "MIST_Total_Soal" in result:
+                        st.markdown("---")
+                        st.markdown("**Detail Simulasi MIST:**")
+                        
+                        # Buat tabel untuk detail soal MIST
+                        mist_data = []
+                        i = 0
+                        while f"MIST_Soal_{i+1}" in result:
+                            mist_data.append({
+                                "Soal": result[f"MIST_Soal_{i+1}"],
+                                "Jawaban Pengguna": result[f"MIST_Jawaban_{i+1}"],
+                                "Status": "✅ Benar" if result[f"MIST_Benar_{i+1}"] else "❌ Salah",
+                                "Waktu Respons (detik)": result[f"MIST_Waktu_Respons_{i+1}"],
+                                "Level Kesulitan": result[f"MIST_Level_{i+1}"]
+                            })
+                            i += 1
+                        
+                        if mist_data:
+                            mist_df = pd.DataFrame(mist_data)
+                            st.dataframe(mist_df)
         
         st.markdown("### Data Lengkap")
         st.dataframe(df)
@@ -1533,6 +2088,7 @@ def hasil_page():
             st.rerun()
     else:
         st.warning("Belum ada data hasil. Silakan lengkapi semua tahap terlebih dahulu.")
+
         
 # ============================================
 # MAIN APP
@@ -1562,9 +2118,9 @@ def main():
         "music_instructions": music_instructions_page,
         "music_session": music_session_page,
         "feeling_evaluation": feeling_evaluation_page,
-        "high_prep": high_prep_page,
-        "high_presentation": high_presentation_page,
         "high_arithmetic": high_arithmetic_page,
+        "mist_instructions": mist_instructions_page,
+        "mist_simulation": mist_simulation_page,  # Tambahkan halaman MIST
         "cerita_setup": cerita_setup_page,
         "cerita": cerita_page,
         "presentation_prep": presentation_prep_page,
