@@ -658,7 +658,7 @@ def tahap2_page():
             st.rerun()
 
 def tahap3_page():
-    st.title("🎤 Tahap 3 - Presentasi Kelemahan Diri")
+    st.title("🎤 Tahap 3")
     st.markdown("---")
     
     st.markdown("""
