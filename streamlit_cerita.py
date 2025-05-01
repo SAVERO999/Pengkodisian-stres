@@ -987,45 +987,135 @@ def mist_instructions_page():
             st.rerun()
 
 def mist_simulation_page():
-    st.title("🧠 MIST - Simulasi Aritmatika")
-    st.markdown("---")
     
-    # CSS untuk meningkatkan tampilan
+    # CSS untuk meningkatkan tampilan dan mencegah glitch dengan fixed heights
     st.markdown("""
     <style>
         .stButton>button {
             width: 100%;
-            height: 50px;
+            height: 40px;
             font-size: 20px;
+        }
+        .main-timer {
+            position: fixed;
+            top: 70px;
+            left: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 8px 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 1000;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        .question-timer {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            width: 200px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 8px 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 1000;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .timer-progress {
+            height: 10px;
+            margin-top: 5px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .timer-progress-bar {
+            height: 100%;
+            background-color: #4CAF50;
+            transition: width 0.3s ease;
         }
         .big-font {
             font-size: 30px;
             font-weight: bold;
             text-align: center;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 2px 0;
         }
         .answer-font {
             font-size: 24px;
             text-align: center;
-            padding: 10px;
             color: blue;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+        .result-container {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
         }
         .result-correct {
             color: green;
-            font-size: 28px;
+            font-size: 24px;
             text-align: center;
-            padding: 10px;
             font-weight: bold;
         }
         .result-incorrect {
             color: red;
-            font-size: 28px;
+            font-size: 24px;
             text-align: center;
-            padding: 10px;
             font-weight: bold;
+        }
+        .keypad-container {
+            margin: 10px 0;
+        }
+        .metrics-container {
+            margin-top: 5px;
+            padding: 8px;
+            border-radius: 5px;
+        }
+        .empty-space {
+            height: 20px;
+        }
+        /* Pengaturan tambahan untuk mengurangi margin/padding dari elemen Streamlit */
+        .stProgress {
+            margin-top: 0 !important;
+            margin-bottom: 5px !important;
+            display: none;
+        }
+        /* Main content padding to avoid overlapping fixed timers */
+        .main-content {
+            margin-top: 110px;
+            padding: 0 10px;
+        }
+        /* Hide default Streamlit elements */
+        header {
+            visibility: hidden;
+        }
+        footer {
+            visibility: hidden;
+        }
+        /* Custom progress bars for metrics */
+        .custom-progress {
+            width: 100%;
+            height: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        .custom-progress-bar {
+            height: 100%;
+            border-radius: 5px;
         }
     </style>
     """, unsafe_allow_html=True)
-    
+        
     # Inisialisasi variabel session state jika belum ada
     if 'mist_initialized' not in st.session_state:
         st.session_state.mist_initialized = True
@@ -1053,8 +1143,21 @@ def mist_simulation_page():
         st.session_state.should_clear_response = False
         
         # Durasi total dalam detik (3 menit)
-        st.session_state.MIST_TOTAL_DURATION = 300
+        st.session_state.MIST_TOTAL_DURATION = 60
         st.session_state.last_sound_time = 0  # Melacak kapan terakhir kali kita memainkan suara
+    
+    # Buat placeholder containers dengan fixed heights
+    title_container = st.container()
+    main_content_container = st.container()
+    main_timer_container = st.container()
+    question_timer_container = st.container()
+    question_display = st.container()
+    answer_display = st.container()
+    feedback_display = st.container()
+    correct_answer_display = st.container()
+    keypad_container = st.container()
+    metrics_container = st.container()
+    sound_container = st.empty()
     
     # Fungsi untuk membuat suara metronom
     def get_metronome_sound(fast=False):
@@ -1260,13 +1363,8 @@ def mist_simulation_page():
     st.session_state.total_elapsed_time += time_delta
     st.session_state.last_update_time = current_time
     
-    # Tampilkan progress bar
-    progress = min(1.0, st.session_state.total_elapsed_time / st.session_state.MIST_TOTAL_DURATION)
-    st.progress(progress)
-    
-    # Waktu tersisa
+    # Calculate remaining time
     time_left = max(0, st.session_state.MIST_TOTAL_DURATION - st.session_state.total_elapsed_time)
-    st.write(f"**Waktu Tersisa:** {int(time_left)}s")
     
     # Periksa game over
     if time_left <= 0 and not st.session_state.game_over:
@@ -1309,14 +1407,32 @@ def mist_simulation_page():
             'difficulty_level': st.session_state.difficulty_level
         })
     
-    # Tampilan timer pertanyaan
-    timer_progress = max(0, min(1.0, remaining_time / st.session_state.question_time_limit))
-    st.write(f"**Timer Pertanyaan:** {remaining_time:.1f}s")
-    timer_color = "green" if timer_progress > 0.5 else "yellow" if timer_progress > 0.25 else "red"
-    st.progress(timer_progress)
+    # HTML untuk timer utama (kiri atas - fixed position)
+    with main_timer_container:
+        st.markdown(
+            f"""
+            <div class="main-timer">⏱️ Total: {int(time_left)}s</div>
+            """, 
+            unsafe_allow_html=True
+        )
+    
+    # HTML untuk timer pertanyaan (kanan atas - fixed position)
+    with question_timer_container:
+        timer_progress = max(0, min(1.0, remaining_time / st.session_state.question_time_limit))
+        timer_color = "green" if timer_progress > 0.5 else "yellow" if timer_progress > 0.25 else "red"
+        st.markdown(
+            f"""
+            <div class="question-timer">
+                ⏲️ Soal: {remaining_time:.1f}s
+                <div class="timer-progress">
+                    <div class="timer-progress-bar" style="width: {timer_progress * 100}%; background-color: {timer_color};"></div>
+                </div>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
     
     # Logika suara metronom
-    sound_container = st.empty()
     if st.session_state.response_status is None and not st.session_state.game_over:
         play_sound = False
         sound_interval = 1.0  # Interval default (1 detik)
@@ -1347,112 +1463,114 @@ def mist_simulation_page():
                 sound_container.markdown(get_metronome_sound(fast=False), unsafe_allow_html=True)
                 st.session_state.last_sound_time = current_time
     
-    # Buat placeholder untuk umpan balik di tingkat atas
-    question_display = st.empty()
-    answer_display = st.empty()
-    feedback_display = st.empty() 
-    correct_answer_display = st.empty()
-    
-    # Bagian konten game
-    if not st.session_state.game_over:
-        # Tampilkan pertanyaan
-        question_display.markdown(f'<div class="big-font">{st.session_state.current_question}</div>', unsafe_allow_html=True)
-        
-        # Tampilkan jawaban saat ini
-        answer_display.markdown(f'<div class="answer-font">Jawaban: {st.session_state.current_answer}</div>', unsafe_allow_html=True)
-        
-        # Tangani pesan respons (benar/salah)
-        if st.session_state.response_status:
-            if current_time < st.session_state.show_response_until:
-                result_class = "result-correct" if st.session_state.response_status == "Benar" else "result-incorrect"
-                feedback_display.markdown(f'<div class="{result_class}">{st.session_state.response_status}</div>', unsafe_allow_html=True)
-                
-                # Tampilkan jawaban yang benar jika salah
-                if st.session_state.response_status == "Salah" or st.session_state.response_status == "Waktu Habis":
-                    correct_answer_display.markdown(f'<div class="answer-font">Jawaban benar: {st.session_state.correct_answer}</div>', unsafe_allow_html=True)
-            else:
-                # Bersihkan tampilan umpan balik ketika waktu habis
-                feedback_display.empty()
-                correct_answer_display.empty()
-                
-                # Saatnya menampilkan pertanyaan baru
-                generate_question()
-                st.rerun()
-        elif st.session_state.should_clear_response:
-            # Bersihkan umpan balik pada pertanyaan baru
-            feedback_display.empty()
-            correct_answer_display.empty()
-            st.session_state.should_clear_response = False
-        
-        # Input angka
-        keypad_container = st.container()
-        
-        if st.session_state.response_status is None:
+    # Bagian konten game dalam container tetap
+    with main_content_container:
+        if not st.session_state.game_over:
+            # Tampilkan pertanyaan
+            with question_display:
+                st.markdown(f'<div class="big-font">{st.session_state.current_question}</div>', unsafe_allow_html=True)
+            
+            # Tampilkan jawaban saat ini
+            with answer_display:
+                st.markdown(f'<div class="answer-font">Jawaban: {st.session_state.current_answer}</div>', unsafe_allow_html=True)
+            
+            # Tangani pesan respons (benar/salah)
+            with feedback_display:
+                if st.session_state.response_status:
+                    if current_time < st.session_state.show_response_until:
+                        result_class = "result-correct" if st.session_state.response_status == "Benar" else "result-incorrect"
+                        st.markdown(f'<div class="result-container"><div class="{result_class}">{st.session_state.response_status}</div></div>', unsafe_allow_html=True)
+                    else:
+                        # Bersihkan tampilan tetapi pertahankan tinggi
+                        st.markdown('<div class="result-container"></div>', unsafe_allow_html=True)
+                        
+                        # Tampilkan pertanyaan baru
+                        generate_question()
+                        st.rerun()
+                else:
+                    # Bersihkan umpan balik tetapi pertahankan tinggi
+                    st.markdown('<div class="result-container"></div>', unsafe_allow_html=True)
+            
+            # Placeholder kosong untuk menjaga konsistensi tata letak
+            with correct_answer_display:
+                st.markdown('<div class="empty-space"></div>', unsafe_allow_html=True)
+            
+            # Input angka
             with keypad_container:
-                # Buat keypad horizontal yang lebih ringkas
-                col1, col2, col3 = st.columns([3, 1, 1])
+                if st.session_state.response_status is None:
+                    # Buat keypad dengan semua tombol dalam satu baris
+                    cols_digits = st.columns(12)  # 10 digits + backspace + submit
+                    
+                    # Tombol 0-9 dalam satu baris
+                    for i in range(10):
+                        with cols_digits[i]:
+                            if st.button(f"{i}", key=f"num_{i}"):
+                                st.session_state.current_answer += str(i)
+                    
+                    # Tombol backspace
+                    with cols_digits[10]:
+                        if st.button("⌫", key="backspace"):
+                            if st.session_state.current_answer:
+                                st.session_state.current_answer = st.session_state.current_answer[:-1]
+                    
+                    # Tombol submit
+                    with cols_digits[11]:
+                        if st.button("✓", key="submit", type="primary"):
+                            if st.session_state.current_answer:
+                                submit_answer()
+            
+            # Metrik kinerja dalam format yang bersih
+            with metrics_container:
+                col1, col2 = st.columns(2)
                 
                 with col1:
-                    # Buat satu baris dengan semua digit
-                    cols = st.columns(10)  # Lebih banyak kolom untuk layout horizontal
+                    your_score = int(st.session_state.user_correct_rate * 100)
+                    st.markdown(f"<div><b>Performa Anda:</b> {your_score}%</div>", unsafe_allow_html=True)
+                    st.markdown(f"""
+                        <div class="custom-progress">
+                            <div class="custom-progress-bar" style="width: {your_score}%; background-color: #4CAF50;"></div>
+                        </div>
+                    """, unsafe_allow_html=True)
                     
-                    # Tambahkan digit 0-9 dalam satu baris
-                    for i in range(10):
-                        with cols[i]:
-                            if st.button(f"{i}", key=f"num_{i}", use_container_width=True):
-                                st.session_state.current_answer += str(i)
+                    avg_score = int(st.session_state.fake_average_correct_rate * 100)
+                    st.markdown(f"<div><b>Performa Rata-rata:</b> {avg_score}%</div>", unsafe_allow_html=True)
+                    st.markdown(f"""
+                        <div class="custom-progress">
+                            <div class="custom-progress-bar" style="width: {avg_score}%; background-color: #2196F3;"></div>
+                        </div>
+                    """, unsafe_allow_html=True)
                 
-                # Tambahkan backspace dan submit
                 with col2:
-                    if st.button("⌫", key="backspace", use_container_width=True):
-                        if st.session_state.current_answer:
-                            st.session_state.current_answer = st.session_state.current_answer[:-1]
-                
-                with col3:
-                    if st.button("✓", key="submit", type="primary", use_container_width=True):
-                        if st.session_state.current_answer:
-                            submit_answer()
-    else:
-        # Tampilan game over
-        question_display.write("# Tes Selesai")
-        answer_display.write(f"## Skor Akhir Anda: {st.session_state.correct_answers}/{st.session_state.total_questions}")
-        feedback_display.write("Selamat! Anda telah menyelesaikan simulasi MIST.")
-        
-        col_btn = st.columns([1, 2, 1])
-        with col_btn[1]:
-            if st.button("➡️ Lanjutkan ke Tahap Berikutnya", use_container_width=True):
-                # Lanjut ke halaman berikutnya
-                st.session_state.page = "rest_timer"
-                st.rerun()
-    
-    # Metrik kinerja
-    metrics_container = st.container()
-    
-    with metrics_container:
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            your_score = int(st.session_state.user_correct_rate * 100)
-            st.progress(st.session_state.user_correct_rate)
-            st.write(f"Performa Anda: {your_score}%")
+                    st.markdown(f"<div><b>Skor:</b> {st.session_state.correct_answers}/{st.session_state.total_questions}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div><b>Level:</b> {st.session_state.difficulty_level}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div><b>Waktu Respons Rata-rata:</b> {st.session_state.average_response_time:.1f}s</div>", unsafe_allow_html=True)
+        else:
+            # Tampilan game over - tetap menggunakan container untuk konsistensi
+            with question_display:
+                st.markdown('<div class="big-font">Tes Selesai</div>', unsafe_allow_html=True)
             
-            avg_score = int(st.session_state.fake_average_correct_rate * 100)
-            st.progress(st.session_state.fake_average_correct_rate)
-            st.write(f"Performa Rata-rata: {avg_score}%")
-        
-        with col2:
-            st.write(f"**Skor:** {st.session_state.correct_answers}/{st.session_state.total_questions}")
-            st.write(f"**Level:** {st.session_state.difficulty_level}")
-            st.write(f"**Waktu Respons Rata-rata:** {st.session_state.average_response_time:.1f}s")
+            with answer_display:
+                st.markdown(f'<div class="answer-font">Skor Akhir Anda: {st.session_state.correct_answers}/{st.session_state.total_questions}</div>', unsafe_allow_html=True)
+            
+            with feedback_display:
+                st.markdown('<div class="result-container"><div class="result-correct">Selamat! Anda telah menyelesaikan simulasi MIST.</div></div>', unsafe_allow_html=True)
+            
+            with correct_answer_display:
+                st.markdown('<div class="empty-space"></div>', unsafe_allow_html=True)
+            
+            with keypad_container:
+                col_btn = st.columns([1, 2, 1])
+                with col_btn[1]:
+                    if st.button("➡️ Lanjutkan ke Tahap Berikutnya", key="next_to_rest"):
+                        # Lanjut ke halaman berikutnya
+                        st.session_state.page = "rest_timer"
+                        st.rerun()
     
-    # Auto-refresh untuk pembaruan timer
+    # Auto-refresh untuk pembaruan timer tetapi dengan delay lebih lama
     if not st.session_state.game_over:
-        # Gunakan container untuk refresh untuk menghindari duplikasi elemen
-        refresh_container = st.empty()
-        time.sleep(0.1)  # Sedikit penundaan untuk mengurangi penggunaan CPU
+        time.sleep(0.3)  # Delay lebih lama untuk mengurangi glitch
         st.rerun()
-
-
+        
 def cerita_setup_page():
     st.title(f"⚙️ Pengaturan - {st.session_state.current_condition}")
     st.markdown("---")
