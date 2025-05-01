@@ -1143,7 +1143,7 @@ def mist_simulation_page():
         st.session_state.should_clear_response = False
         
         # Durasi total dalam detik (3 menit)
-        st.session_state.MIST_TOTAL_DURATION = 60
+        st.session_state.MIST_TOTAL_DURATION = 300
         st.session_state.last_sound_time = 0  # Melacak kapan terakhir kali kita memainkan suara
     
     # Buat placeholder containers dengan fixed heights
