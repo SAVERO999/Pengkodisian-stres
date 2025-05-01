@@ -432,7 +432,137 @@ def data_diri_page():
                 st.rerun()
 
 def rest_timer_page():
-    # Completely reset the page first
+    # Skip rest timer for Tahap 4 and go directly to acute_stress
+    if 'current_condition' in st.session_state and st.session_state.current_condition == "Tahap 4":
+        # Clear all MIST and arithmetic state variables
+        keys_to_clear = [
+            # Existing arithmetic keys
+            'arithmetic_problems', 
+            'current_problem', 
+            'answers', 
+            'task_completed',
+            'arithmetic_history',
+            'arithmetic_start_time',
+            'arithmetic_time_up',
+            'high_arithmetic_history',
+            'high_arithmetic_attempts',
+            'high_arithmetic_correct_count',
+            'answer_form',
+            'answer_0',
+            'answer_1',
+            
+            # MIST-related keys
+            'mist_initialized',
+            'current_question',
+            'current_answer',
+            'correct_answer',
+            'response_status',
+            'question_start_time',
+            'question_time_limit',
+            'total_elapsed_time',
+            'start_time',
+            'last_update_time',
+            'last_sound_time',
+            'should_clear_response',
+            'show_response_until',
+            'consecutive_correct',
+            'consecutive_incorrect',
+            'difficulty_level',
+            'response_times',
+            'average_response_time',
+            'fake_average_correct_rate',
+            'user_correct_rate',
+            'game_over',
+            'MIST_TOTAL_DURATION',
+            'correct_answers',
+            'incorrect_answers',
+            'total_questions',
+            'mist_history'
+        ]
+        
+        # Remove all keys from session state
+        for key in keys_to_clear:
+            if key in st.session_state:
+                del st.session_state[key]
+        
+        # Use safer JavaScript to clean up UI elements
+        components.html(
+            """
+            <script>
+            // Use a safer approach to clean elements - hide them instead of removing
+            function safeCleanup() {
+                try {
+                    // Hide elements rather than removing them
+                    const elementsToHide = window.parent.document.querySelectorAll(
+                        '.stProgress, .stButton, .stTextInput, .stNumberInput, ' +
+                        '.big-font, .answer-font, .result-correct, .result-incorrect, ' +
+                        '.stMetric'
+                    );
+                    
+                    elementsToHide.forEach(el => {
+                        if (el && el.style) {
+                            el.style.display = 'none';
+                        }
+                    });
+                    
+                    // Stop any audio that might be playing
+                    const audioElements = window.parent.document.querySelectorAll('audio');
+                    audioElements.forEach(audio => {
+                        if (audio) {
+                            audio.pause();
+                            if (audio.parentNode) {
+                                try {
+                                    audio.parentNode.removeChild(audio);
+                                } catch (e) {
+                                    // Just hide it if we can't remove it
+                                    audio.style.display = 'none';
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Try to reset any forms
+                    const forms = window.parent.document.querySelectorAll('form');
+                    forms.forEach(form => {
+                        if (form) {
+                            try {
+                                form.reset();
+                            } catch (e) {
+                                // If reset fails, try to hide
+                                if (form.style) {
+                                    form.style.display = 'none';
+                                }
+                            }
+                        }
+                    });
+                    
+                    console.log("Cleanup completed successfully");
+                } catch (e) {
+                    console.log("Cleanup error:", e);
+                }
+            }
+            
+            // Execute the cleanup
+            safeCleanup();
+            </script>
+            """,
+            height=0
+        )
+        
+        # Wait a tiny bit to ensure everything is processed
+        time.sleep(0.1)
+        
+        # Set up default DASS21 responses if needed
+        if 'dass21_responses' not in st.session_state:
+            st.session_state.dass21_responses = {}
+            for i in range(len(DASS21_QUESTIONS)):
+                st.session_state.dass21_responses[i] = DASS21_OPTIONS[0]
+        
+        # Go directly to acute stress page
+        st.session_state.page = "acute_stress"
+        st.rerun()
+    
+    # Completely reset the page first for other conditions
     st.empty()
     
     # Clear all MIST and arithmetic state variables
