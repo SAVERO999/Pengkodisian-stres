@@ -795,7 +795,7 @@ def tahap3_page():
     <div class='medium-font'>
     <b>Instruksi:</b><br>
     1. Anda akan mengerjakan tugas aritmatika sulit (pengurangan serial 13 dari 1022)<br>
-    2. Dilanjutkan dengan simulasi MIST (Mental Improvement through Speed Training)
+    2. Dilanjutkan dengan simulasi MIST (Montreal Imaging Stress Task)
     </div>
     """, unsafe_allow_html=True)
     
