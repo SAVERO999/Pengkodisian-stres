@@ -1067,7 +1067,7 @@ def high_arithmetic_page():
     minutes, seconds = divmod(int(time_left), 60)
     st.markdown(f"### Waktu Tersisa: {minutes:02d}:{seconds:02d}")
     
-    progress = min(elapsed / 300, 1.0)
+    progress = min(elapsed / 3, 1.0)
     st.progress(progress)
     
     if time_left <= 0:
@@ -1273,7 +1273,7 @@ def mist_simulation_page():
         st.session_state.should_clear_response = False
         
         # Durasi total dalam detik (3 menit)
-        st.session_state.MIST_TOTAL_DURATION = 300
+        st.session_state.MIST_TOTAL_DURATION = 3
         st.session_state.last_sound_time = 0  # Melacak kapan terakhir kali kita memainkan suara
     
     # Buat placeholder containers dengan fixed heights
