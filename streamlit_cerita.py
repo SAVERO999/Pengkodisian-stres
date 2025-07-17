@@ -695,7 +695,7 @@ def rest_timer_page():
     # Hitung waktu yang tersisa
     current_time = time.time()
     elapsed = current_time - st.session_state.rest_start_time
-    time_left = max(0, 2 - elapsed)  # 10 detik istirahat
+    time_left = max(0, 60 - elapsed)  # 10 detik istirahat
     
     st.markdown("""
     <div class='medium-font'>
@@ -2006,7 +2006,7 @@ def cerita_page():
         st.session_state.reading_time_up = False
     
     elapsed = time.time() - st.session_state.reading_start_time
-    time_left = max(0, 3 - elapsed)
+    time_left = max(0, 300 - elapsed)
     
     selected_story = st.session_state.selected_story
     
