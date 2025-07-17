@@ -879,7 +879,7 @@ def pmr_session_page():
             st.session_state.pmr_start_time = time.time()
         
         elapsed = time.time() - st.session_state.pmr_start_time
-        time_left = max(0, 270 - elapsed)  # 4 menit 30 detik = 270 detik
+        time_left = max(0, 2 - elapsed)  # 4 menit 30 detik = 270 detik
         
         # Progress bar
         st.progress(min(elapsed/270, 1.0))
