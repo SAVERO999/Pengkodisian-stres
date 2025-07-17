@@ -931,7 +931,7 @@ def music_session_page():
     st.audio(audio_bytes, format='audio/mp3', start_time=0)
     
     elapsed = time.time() - st.session_state.music_start_time
-    time_left = max(0, 300 - elapsed)  # 5 menit = 300 detik
+    time_left = max(0, 3 - elapsed)  # 5 menit = 300 detik
     
     # Progress bar
     st.progress(min(elapsed/330, 1.0))
