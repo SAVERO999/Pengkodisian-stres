@@ -879,7 +879,7 @@ def pmr_session_page():
             st.session_state.pmr_start_time = time.time()
         
         elapsed = time.time() - st.session_state.pmr_start_time
-        time_left = max(0, 2 - elapsed)  # 4 menit 30 detik = 270 detik
+        time_left = max(0, 270 - elapsed)  # 4 menit 30 detik = 270 detik
         
         # Progress bar
         st.progress(min(elapsed/270, 1.0))
@@ -931,7 +931,7 @@ def music_session_page():
     st.audio(audio_bytes, format='audio/mp3', start_time=0)
     
     elapsed = time.time() - st.session_state.music_start_time
-    time_left = max(0, 3 - elapsed)  # 5 menit = 300 detik
+    time_left = max(0, 300 - elapsed)  # 5 menit = 300 detik
     
     # Progress bar
     st.progress(min(elapsed/330, 1.0))
@@ -973,7 +973,7 @@ def feeling_evaluation_page():
         """, unsafe_allow_html=True)
         
         elapsed = time.time() - st.session_state.prep_start_time
-        prep_time_left = max(0, 0 - elapsed)
+        prep_time_left = max(0, 61 - elapsed)
         
         st.progress(min(elapsed/60, 1.0))
         st.markdown(f"### Waktu Persiapan Tersisa: {int(prep_time_left//60):02d}:{int(prep_time_left%60):02d}")
@@ -995,7 +995,7 @@ def feeling_evaluation_page():
         st.markdown("### Silakan sampaikan evaluasi Anda kepada evaluator")
         
         elapsed = time.time() - st.session_state.presentation_start_time
-        presentation_time_left = max(0, 1 - elapsed)
+        presentation_time_left = max(0, 180 - elapsed)
         
         st.progress(min(elapsed/180, 1.0))
         st.markdown(f"### Waktu Presentasi Tersisa: {int(presentation_time_left//60):02d}:{int(presentation_time_left%60):02d}")
