@@ -1891,7 +1891,7 @@ def arithmetic_task_page():
     
     # Calculate remaining time
     elapsed = time.time() - st.session_state.arithmetic_start_time
-    time_left = max(0, 3 - elapsed)  # 5 minutes = 300 seconds
+    time_left = max(0, 300 - elapsed)  # 5 minutes = 300 seconds
     
     # Display remaining time
     minutes = int(time_left // 60)
