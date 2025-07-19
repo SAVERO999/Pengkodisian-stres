@@ -2006,7 +2006,7 @@ def cerita_page():
         st.session_state.reading_time_up = False
     
     elapsed = time.time() - st.session_state.reading_start_time
-    time_left = max(0, 300 - elapsed)
+    time_left = max(0, 1 - elapsed)
     
     selected_story = st.session_state.selected_story
     
