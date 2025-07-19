@@ -879,7 +879,7 @@ def pmr_session_page():
             st.session_state.pmr_start_time = time.time()
         
         elapsed = time.time() - st.session_state.pmr_start_time
-        time_left = max(0, 2 - elapsed)  # 4 menit 30 detik = 270 detik
+        time_left = max(0, 270 - elapsed)  # 4 menit 30 detik = 270 detik
         
         # Progress bar
         st.progress(min(elapsed/270, 1.0))
@@ -931,7 +931,7 @@ def music_session_page():
     st.audio(audio_bytes, format='audio/mp3', start_time=0)
     
     elapsed = time.time() - st.session_state.music_start_time
-    time_left = max(0, 3 - elapsed)  # 5 menit = 300 detik
+    time_left = max(0, 300 - elapsed)  # 5 menit = 300 detik
     
     # Progress bar
     st.progress(min(elapsed/330, 1.0))
@@ -995,7 +995,7 @@ def feeling_evaluation_page():
         st.markdown("### Silakan sampaikan evaluasi Anda kepada evaluator")
         
         elapsed = time.time() - st.session_state.presentation_start_time
-        presentation_time_left = max(0, 1 - elapsed)
+        presentation_time_left = max(0, 180 - elapsed)
         
         st.progress(min(elapsed/180, 1.0))
         st.markdown(f"### Waktu Presentasi Tersisa: {int(presentation_time_left//60):02d}:{int(presentation_time_left%60):02d}")
@@ -1062,7 +1062,7 @@ def high_arithmetic_page():
     st.markdown("---")
     
     elapsed = time.time() - st.session_state.arithmetic_start_time
-    time_left = max(0, 3 - elapsed)  # 5 menit = 300 detik
+    time_left = max(0, 300 - elapsed)  # 5 menit = 300 detik
     
     minutes, seconds = divmod(int(time_left), 60)
     st.markdown(f"### Waktu Tersisa: {minutes:02d}:{seconds:02d}")
@@ -1104,7 +1104,7 @@ def mist_instructions_page():
       <li>Semakin banyak soal yang Anda jawab dengan benar, semakin sulit soal selanjutnya</li>
       <li>Jika waktu habis sebelum Anda menjawab, soal dianggap salah</li>
       <li>Performa Anda akan dibandingkan dengan rata-rata peserta lain</li>
-      <li>Durasi simulasi adalah 3 menit</li>
+      <li>Durasi simulasi adalah 5 menit</li>
     </ul>
     </div>
     """, unsafe_allow_html=True)
@@ -1272,8 +1272,8 @@ def mist_simulation_page():
         st.session_state.game_over = False
         st.session_state.should_clear_response = False
         
-        # Durasi total dalam detik (3 menit)
-        st.session_state.MIST_TOTAL_DURATION = 3
+        # Durasi total dalam detik (5 menit)
+        st.session_state.MIST_TOTAL_DURATION = 300
         st.session_state.last_sound_time = 0  # Melacak kapan terakhir kali kita memainkan suara
     
     # Buat placeholder containers dengan fixed heights
@@ -1794,7 +1794,7 @@ def presentation_prep_page():
         st.session_state.prep_start_time = time.time()
     
     elapsed = time.time() - st.session_state.prep_start_time
-    time_left = max(0, 1 - elapsed)
+    time_left = max(0, 180 - elapsed)
 
     st.markdown("### Topik Presentasi Anda:")
     st.markdown(f"<div style='padding:10px; background-color:#cce5ff; border-radius:5px; font-size:24px; font-weight:bold;'>{st.session_state.selected_topic}</div>", unsafe_allow_html=True)
@@ -1835,7 +1835,7 @@ def presentation_page():
     
     # Calculate remaining time
     elapsed = time.time() - st.session_state.presentation_start_time
-    time_left = max(0, 3 - elapsed)  # 5 menit = 300 detik
+    time_left = max(0, 300 - elapsed)  # 5 menit = 300 detik
     
     st.markdown("### Topik Presentasi Anda:")
     st.markdown(f"<div style='padding:10px; background-color:#cce5ff; border-radius:5px; font-size:24px; font-weight:bold;'>{st.session_state.selected_topic}</div>", unsafe_allow_html=True)
@@ -1891,7 +1891,7 @@ def arithmetic_task_page():
     
     # Calculate remaining time
     elapsed = time.time() - st.session_state.arithmetic_start_time
-    time_left = max(0, 3 - elapsed)  # 5 minutes = 300 seconds
+    time_left = max(0, 300 - elapsed)  # 5 minutes = 300 seconds
     
     # Display remaining time
     minutes = int(time_left // 60)
@@ -2006,7 +2006,7 @@ def cerita_page():
         st.session_state.reading_time_up = False
     
     elapsed = time.time() - st.session_state.reading_start_time
-    time_left = max(0, 1 - elapsed)
+    time_left = max(0, 300 - elapsed)
     
     selected_story = st.session_state.selected_story
     
