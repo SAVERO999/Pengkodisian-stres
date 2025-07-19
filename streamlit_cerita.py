@@ -1794,7 +1794,7 @@ def presentation_prep_page():
         st.session_state.prep_start_time = time.time()
     
     elapsed = time.time() - st.session_state.prep_start_time
-    time_left = max(0, 1 - elapsed)
+    time_left = max(0, 180 - elapsed)
 
     st.markdown("### Topik Presentasi Anda:")
     st.markdown(f"<div style='padding:10px; background-color:#cce5ff; border-radius:5px; font-size:24px; font-weight:bold;'>{st.session_state.selected_topic}</div>", unsafe_allow_html=True)
@@ -1835,7 +1835,7 @@ def presentation_page():
     
     # Calculate remaining time
     elapsed = time.time() - st.session_state.presentation_start_time
-    time_left = max(0, 3 - elapsed)  # 5 menit = 300 detik
+    time_left = max(0, 300 - elapsed)  # 5 menit = 300 detik
     
     st.markdown("### Topik Presentasi Anda:")
     st.markdown(f"<div style='padding:10px; background-color:#cce5ff; border-radius:5px; font-size:24px; font-weight:bold;'>{st.session_state.selected_topic}</div>", unsafe_allow_html=True)
@@ -2006,7 +2006,7 @@ def cerita_page():
         st.session_state.reading_time_up = False
     
     elapsed = time.time() - st.session_state.reading_start_time
-    time_left = max(0, 3 - elapsed)
+    time_left = max(0, 300 - elapsed)
     
     selected_story = st.session_state.selected_story
     
